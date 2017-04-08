@@ -878,15 +878,13 @@ const BubbleMapComponent = Component.extend({
     let minRadius = this.activeProfile.minRadiusPx;
     let maxRadius = this.activeProfile.maxRadiusPx;
 
-    minRadius = Math.max(maxRadius * extent[0], minRadius);
-    maxRadius = Math.max(maxRadius * extent[1], minRadius);
+    let minArea = utils.radiusToArea(Math.max(maxRadius * extent[0], minRadius));
+    let maxArea = utils.radiusToArea(Math.max(maxRadius * extent[1], minRadius));
 
-    if (this.model.marker.size.scaleType !== "ordinal") {
-      this.sScale.range([utils.radiusToArea(minRadius), utils.radiusToArea(maxRadius)]);
-    } else {
-      this.sScale.rangePoints([utils.radiusToArea(minRadius), utils.radiusToArea(maxRadius)], 0).range();
-    }
+    let range = minArea === maxArea? [minArea, maxArea] :
+      d3.range(minArea, maxArea, (maxArea - minArea)/this.sScale.domain().length).concat(maxArea);
 
+    this.sScale.range(range);
   },
 
   _interact() {
