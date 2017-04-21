@@ -5,9 +5,11 @@
   ],
   "scripts": {
     "link": "npm link ../vizabi",
-    "build": "webpack --progress"
+    "build": "cross-env NODE_ENV=production webpack --progress",
+    "deploy": "tool-deploy"
   },
   "devDependencies": {
+    "cross-env": "^4.0.0",
     "vizabi": "^0.21.0-20",
     "vizabi-tool-bundler": "github:vizabi/vizabi-tool-bundler"
   },
