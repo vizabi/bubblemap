@@ -16,7 +16,7 @@ const {
 
 
 // BUBBLE MAP CHART COMPONENT
-const BubbleMapComponent = Component.extend({
+const BubbleMapComponent = Component.extend("bubblemap", {
   /**
    * Initializes the component (Bubble Map Chart).
    * Executed once before any template is rendered.
