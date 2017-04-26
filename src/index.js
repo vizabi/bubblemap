@@ -1,6 +1,7 @@
 import "./styles.scss";
 import component from "./component";
 
+const VERSION_INFO = { version: __VERSION, build: __BUILD };
 
 //BAR CHART TOOL
 const BubbleMap = Vizabi.Tool.extend("BubbleMap", {
@@ -108,7 +109,9 @@ const BubbleMap = Vizabi.Tool.extend("BubbleMap", {
       },
       presentation: false
     }
-  }
+  },
+
+  versionInfo: VERSION_INFO
 });
 
 export default BubbleMap;
