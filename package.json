@@ -1,5 +1,5 @@
 {
-  "main": "build/dist/bubblemap.js",
+  "main": "build/bubblemap.js",
   "files": [
     "build"
   ],
@@ -14,7 +14,7 @@
     "vizabi-tool-bundler": "github:vizabi/vizabi-tool-bundler"
   },
   "name": "vizabi-bubblemap",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vizabi/vizabi-bubblemap.git"
