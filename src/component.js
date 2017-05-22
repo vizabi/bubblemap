@@ -269,7 +269,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
     this.yInfoEl
       .html(iconQuestion)
-      .select("svg").attr("width", "0px").attr("height", "0px");
+      .select("svg").attr("width", "0px").attr("height", "0px")
+      .style('opacity', Number(Boolean(conceptPropsS.description || conceptPropsS.sourceLink)));
 
     //TODO: move away from UI strings, maybe to ready or ready once
     this.yInfoEl.on("click", () => {
@@ -288,7 +289,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
     this.cInfoEl
       .html(iconQuestion)
-      .select("svg").attr("width", "0px").attr("height", "0px");
+      .select("svg").attr("width", "0px").attr("height", "0px")
+      .style('opacity', Number(Boolean(conceptPropsC.description || conceptPropsC.sourceLink)));
 
     //TODO: move away from UI strings, maybe to ready or ready once
     this.cInfoEl.on("click", () => {
