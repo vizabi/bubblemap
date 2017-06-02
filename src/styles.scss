@@ -185,6 +185,16 @@
       .vzb-bmc-bubble {
         stroke: $vzb-color-black;
         stroke-opacity: .7;
+
+        &.vzb-super-highlighted {
+          animation: blink 1s step-start 0s infinite;
+
+          @keyframes blink {
+            50% {
+              opacity: 0;
+            }
+          }
+        }
       }
     }
   }
