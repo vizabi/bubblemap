@@ -92,6 +92,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       "change:marker.opacityRegular": function(evt) {
         _this.updateOpacity();
       },
+      "change:marker.superHighlight": () => this._readyOnce && this._blinkSuperHighlighted(),
     };
 
     //this._selectlist = new Selectlist(this);
@@ -925,6 +926,10 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
   },
 
+  _blinkSuperHighlighted() {
+    this.entityBubbles
+      .classed("vzb-super-highlighted", d => this.model.marker.isSuperHighlighted(d));
+  },
 
   highlightMarkers() {
     const _this = this;
