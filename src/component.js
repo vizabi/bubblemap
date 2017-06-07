@@ -47,6 +47,9 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     }, {
       name: "ui",
       type: "ui"
+    }, { 
+      name: "data", 
+      type: "data" 
     }];
 
     const _this = this;
@@ -1068,17 +1071,67 @@ const BubbleMapComponent = Component.extend("bubblemap", {
   preload() {
     const _this = this;
 
-    const shape_path = this.model.ui.map.topology.path
-      || globals.ext_resources.host + globals.ext_resources.preloadPath + "world-50m.json";
+    //this component shall fetch the preload geoshape information from a file
+    const loadFromFile = function(path, onSuccess){
+      d3.json(path, (error, json) => {
+        if (error) return console.warn("Failed loading json " + path + ". " + error);
+        _this.topology = json;
+        onSuccess();
+      });
+    }
+    
+    //where the path to preload geoshape can be defined either directly in config:
+    const topoPath = utils.getProp(this, ["model", "ui", "map", "topology", "path"]);
+    
+    //or via an entity property in dataset:
+    const topoWhich = utils.getProp(this, ["model", "ui", "map", "topology", "which"]);
+    const topoKey = utils.getProp(this, ["model", "ui", "map", "topology", "key"]);
+    
 
     return new Promise((resolve, reject) => {
-        d3.json(shape_path, (error, json) => {
-        if (error) return console.warn("Failed loading json " + shape_path + ". " + error);
-    _this.topology = json;
-    resolve();
-  });
-  });
+      
+      // priority 1: direct URL to the topojson file
+      if(topoPath){
+        loadFromFile(topoPath, resolve);
+
+      // priority 2: getting URL to the topojson file via DDF request
+      } else if(topoWhich){
+        const KEY = this.model.entities.dim;
+
+        //build a query to the reader to fetch preload info
+        const query = {
+          language: this.model.locale.id,
+          from: "entities",
+          select: {
+            key: [KEY],
+            value: [topoWhich]
+          },
+          where: { $and: [
+            { [KEY]: "$" + KEY }
+          ] },
+          join: {
+            ["$" + KEY]: { key: KEY, where: { [KEY]: { $in: [topoKey||"world"] } } }
+          },
+        };
+        
+        const dataPromise = this.model.data.load(query, {[topoWhich]: d => d});
+        
+        dataPromise.then(
+          function(dataId){
+            loadFromFile(_this.model.data.path + "/" + _this.model.data.getData(dataId)[0][topoWhich], resolve);
+          },
+          err => utils.warn("Problem with Preload query: ", err, JSON.stringify(query))
+        );
+        
+      // priority 3: no clues provided, go for a hardcoded filename for a world map
+      } else {
+      
+        loadFromFile(globals.ext_resources.host + globals.ext_resources.preloadPath + "world-50m.json", resolve);
+      }
+
+    });
   }
+  
 
 });
 
