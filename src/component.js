@@ -1134,7 +1134,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
         // priority 3: no clues provided, go for a hardcoded filename for a world map
       } else {
-        loadFromFile(globals.ext_resources.host + globals.ext_resources.preloadPath + "world-50m.json", resolve);
+        const { ext_resources } = this.model.data;
+        loadFromFile(ext_resources.host + ext_resources.preloadPath + "world-50m.json", resolve);
       }
 
     });
