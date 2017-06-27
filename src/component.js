@@ -32,25 +32,32 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.isMobile = utils.isMobileOrTablet();
 
     //define expected models for this component
-    this.model_expects = [{
-      name: "time",
-      type: "time"
-    }, {
-      name: "entities",
-      type: "entities"
-    }, {
-      name: "marker",
-      type: "model"
-    }, {
-      name: "locale",
-      type: "locale"
-    }, {
-      name: "ui",
-      type: "ui"
-    }, { 
-      name: "data", 
-      type: "data" 
-    }];
+    this.model_expects = [
+      {
+        name: "time",
+        type: "time"
+      },
+      {
+        name: "entities",
+        type: "entities"
+      },
+      {
+        name: "marker",
+        type: "model"
+      },
+      {
+        name: "locale",
+        type: "locale"
+      },
+      {
+        name: "ui",
+        type: "ui"
+      },
+      {
+        name: "data",
+        type: "data"
+      }
+    ];
 
     const _this = this;
     this.model_binds = {
@@ -152,12 +159,12 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.on("resize", () => {
       //return if updatesize exists with error
       if (_this.updateSize()) return;
-    _this.updateMarkerSizeLimits();
-    _this._labels.updateSize();
-    _this.redrawDataPoints();
-    //_this._selectlist.redraw();
+      _this.updateMarkerSizeLimits();
+      _this._labels.updateSize();
+      _this.redrawDataPoints();
+      //_this._selectlist.redraw();
 
-  });
+    });
 
     this.initMap();
 
@@ -185,24 +192,24 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.model.marker.getFrame(this.model.time.value, (values, time) => {
       // TODO: temporary fix for case when after data loading time changed on validation
       if (time.toString() != _this.model.time.value.toString()) {
-      utils.defer(() => {
-        _this.ready();
-    });
-      return;
-    } // frame is outdated
+        utils.defer(() => {
+          _this.ready();
+        });
+        return;
+      } // frame is outdated
 
-    if (!values) return;
-    _this.values = values;
-    _this.updateEntities();
-    _this.updateTime();
-    _this._labels.ready();
-    _this.redrawDataPoints();
-    _this.highlightMarkers();
-    _this.selectMarkers();
+      if (!values) return;
+      _this.values = values;
+      _this.updateEntities();
+      _this.updateTime();
+      _this._labels.ready();
+      _this.redrawDataPoints();
+      _this.highlightMarkers();
+      _this.selectMarkers();
 //    this._selectlist.redraw();
-    _this.updateDoubtOpacity();
-    _this.updateOpacity();
-  });
+      _this.updateDoubtOpacity();
+      _this.updateOpacity();
+    });
 
   },
 
@@ -234,26 +241,26 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.yTitleEl.select("text")
       .text(this.translator("buttons/size") + ": " + this.strings.title.S)
       .on("click", () => {
-      _this.parent
-      .findChildByName("gapminder-treemenu")
-      .markerID("size")
-      .alignX(_this.model.locale.isRTL() ? "right" : "left")
-      .alignY("top")
-      .updateView()
-      .toggle();
-  });
+        _this.parent
+          .findChildByName("gapminder-treemenu")
+          .markerID("size")
+          .alignX(_this.model.locale.isRTL() ? "right" : "left")
+          .alignY("top")
+          .updateView()
+          .toggle();
+      });
 
     this.cTitleEl.select("text")
       .text(this.translator("buttons/color") + ": " + this.strings.title.C)
       .on("click", () => {
-      _this.parent
-      .findChildByName("gapminder-treemenu")
-      .markerID("color")
-      .alignX(_this.model.locale.isRTL() ? "right" : "left")
-      .alignY("top")
-      .updateView()
-      .toggle();
-  });
+        _this.parent
+          .findChildByName("gapminder-treemenu")
+          .markerID("color")
+          .alignX(_this.model.locale.isRTL() ? "right" : "left")
+          .alignY("top")
+          .updateView()
+          .toggle();
+      });
 
     utils.setIcon(this.dataWarningEl, iconWarn).select("svg").attr("width", "0px").attr("height", "0px");
     this.dataWarningEl.append("text")
@@ -262,14 +269,14 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
     this.dataWarningEl
       .on("click", () => {
-      _this.parent.findChildByName("gapminder-datawarning").toggle();
-  })
-  .on("mouseover", () => {
-      _this.updateDoubtOpacity(1);
-  })
-  .on("mouseout", () => {
-      _this.updateDoubtOpacity();
-  });
+        _this.parent.findChildByName("gapminder-datawarning").toggle();
+      })
+      .on("mouseover", () => {
+        _this.updateDoubtOpacity(1);
+      })
+      .on("mouseout", () => {
+        _this.updateDoubtOpacity();
+      });
 
     this.yInfoEl
       .html(iconQuestion)
@@ -279,7 +286,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     //TODO: move away from UI strings, maybe to ready or ready once
     this.yInfoEl.on("click", () => {
       _this.parent.findChildByName("gapminder-datanotes").pin();
-  });
+    });
     this.yInfoEl.on("mouseover", function() {
       const rect = this.getBBox();
       const coord = utils.makeAbsoluteContext(this, this.farthestViewportElement)(rect.x - 10, rect.y + rect.height + 10);
@@ -289,7 +296,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     });
     this.yInfoEl.on("mouseout", () => {
       _this.parent.findChildByName("gapminder-datanotes").hide();
-  });
+    });
 
     this.cInfoEl
       .html(iconQuestion)
@@ -299,7 +306,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     //TODO: move away from UI strings, maybe to ready or ready once
     this.cInfoEl.on("click", () => {
       _this.parent.findChildByName("gapminder-datanotes").pin();
-  });
+    });
     this.cInfoEl.on("mouseover", function() {
       const rect = this.getBBox();
       const coord = utils.makeAbsoluteContext(this, this.farthestViewportElement)(rect.x - 10, rect.y + rect.height + 10);
@@ -309,7 +316,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     });
     this.cInfoEl.on("mouseout", () => {
       _this.parent.findChildByName("gapminder-datanotes").hide();
-  });
+    });
   },
 
   // show size number on title when hovered on a bubble
@@ -383,20 +390,20 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.entityBubbles.style("opacity", d => {
 
       if (_this.someHighlighted) {
-      //highlight or non-highlight
-      if (_this.model.marker.isHighlighted(d)) return OPACITY_HIGHLT;
-    }
+        //highlight or non-highlight
+        if (_this.model.marker.isHighlighted(d)) return OPACITY_HIGHLT;
+      }
 
-    if (_this.someSelected) {
-      //selected or non-selected
-      return _this.model.marker.isSelected(d) ? OPACITY_SELECT : OPACITY_SELECT_DIM;
-    }
+      if (_this.someSelected) {
+        //selected or non-selected
+        return _this.model.marker.isSelected(d) ? OPACITY_SELECT : OPACITY_SELECT_DIM;
+      }
 
-    if (_this.someHighlighted) return OPACITY_HIGHLT_DIM;
+      if (_this.someHighlighted) return OPACITY_HIGHLT_DIM;
 
-    return OPACITY_REGULAR;
+      return OPACITY_REGULAR;
 
-  });
+    });
 
     this.entityBubbles.classed("vzb-selected", d => _this.model.marker.isSelected(d));
 
@@ -431,15 +438,15 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     const getKeys = function(prefix) {
       prefix = prefix || "";
       return _this.model.marker.getKeys()
-          .map(d => {
+        .map(d => {
           const pointer = {};
-      pointer[KEY] = d[KEY];
-      pointer[TIMEDIM] = endTime;
-      pointer.sortValue = _this.values.size[d[KEY]] || 0;
-      pointer[KEY] = prefix + d[KEY];
-      return pointer;
-    })
-      .sort((a, b) => b.sortValue - a.sortValue);
+          pointer[KEY] = d[KEY];
+          pointer[TIMEDIM] = endTime;
+          pointer.sortValue = _this.values.size[d[KEY]] || 0;
+          pointer[KEY] = prefix + d[KEY];
+          return pointer;
+        })
+        .sort((a, b) => b.sortValue - a.sortValue);
     };
 
     // get array of GEOs, sorted by the size hook
@@ -470,35 +477,35 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
 
     this.entityBubbles = this.bubbleContainer.selectAll(".vzb-bmc-bubble")
-        .data(this.model.marker.getVisible(), d => d[KEY])
-  .order();
+      .data(this.model.marker.getVisible(), d => d[KEY])
+      .order();
 
     //exit selection
     this.entityBubbles.exit().remove();
 
     //enter selection -- init circles
     this.entityBubbles = this.entityBubbles.enter().append("circle")
-        .attr("class", "vzb-bmc-bubble")
-        .on("mouseover", (d, i) => {
+      .attr("class", "vzb-bmc-bubble")
+      .on("mouseover", (d, i) => {
         if (utils.isTouchDevice()) return;
-    _this._interact()._mouseover(d, i);
-  })
-  .on("mouseout", (d, i) => {
-      if (utils.isTouchDevice()) return;
-    _this._interact()._mouseout(d, i);
-  })
-  .on("click", (d, i) => {
-      if (utils.isTouchDevice()) return;
-    _this._interact()._click(d, i);
-    _this.highlightMarkers();
-  })
-  .onTap((d, i) => {
-      _this._interact()._click(d, i);
-    d3.event.stopPropagation();
-  })
-  .onLongTap((d, i) => {
-    })
-  .merge(this.entityBubbles);
+        _this._interact()._mouseover(d, i);
+      })
+      .on("mouseout", (d, i) => {
+        if (utils.isTouchDevice()) return;
+        _this._interact()._mouseout(d, i);
+      })
+      .on("click", (d, i) => {
+        if (utils.isTouchDevice()) return;
+        _this._interact()._click(d, i);
+        _this.highlightMarkers();
+      })
+      .onTap((d, i) => {
+        _this._interact()._click(d, i);
+        d3.event.stopPropagation();
+      })
+      .onLongTap((d, i) => {
+      })
+      .merge(this.entityBubbles);
 
   },
 
@@ -511,8 +518,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
     this.model.marker.select.forEach(d => {
       if (!frame.size[d[KEY]] && frame.size[d[KEY]] !== 0)
-    _this.model.marker.selectMarker(d);
-  });
+        _this.model.marker.selectMarker(d);
+    });
   },
 
   redrawDataPoints(duration, reposition) {
@@ -655,7 +662,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
         .enter().insert("path")
         .attr("d", this.mapPath)
         .attr("id", d => d.properties[this.model.ui.map.topology.geoIdProperty].toLowerCase())
-    .attr("class", "land");
+        .attr("class", "land");
     } else {
       this.mapGraph.insert("path")
         .datum(this.mapFeature)
@@ -806,9 +813,9 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
     // dimensions of the viewport in which the map is shown (can be bigger or smaller than map)
     let viewPortHeight = mapHeight * (1 + offset.top + offset.bottom);
-    let viewPortWidth  = mapWidth  * (1 + offset.left + offset.right);
-    const mapTopOffset   = mapHeight * offset.top;
-    const mapLeftOffset  = mapWidth  * offset.left;
+    let viewPortWidth = mapWidth * (1 + offset.left + offset.right);
+    const mapTopOffset = mapHeight * offset.top;
+    const mapLeftOffset = mapWidth * offset.left;
 
     // translate projection to the middle of map
     const t = [(mapWidth - s * (this.mapBounds[1][0] + this.mapBounds[0][0])) / 2, (mapHeight - s * (this.mapBounds[1][1] + this.mapBounds[0][1])) / 2];
@@ -837,8 +844,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
         .attr("viewBox", [0, 0, viewBoxWidth, viewBoxHeight].join(" "));
 
       //            ratio between map, viewport and offset (for bubbles)
-      widthScale  = viewPortWidth  / (mapWidth || 1) / (1 + offset.left + offset.right);
-      heightScale = viewPortHeight / (mapHeight || 1) / (1 + offset.top  + offset.bottom);
+      widthScale = viewPortWidth / (mapWidth || 1) / (1 + offset.left + offset.right);
+      heightScale = viewPortHeight / (mapHeight || 1) / (1 + offset.top + offset.bottom);
 
     } else {
 
@@ -866,8 +873,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       //input pixel loc after projection, return pixel loc after skew;
       return function(points) {
         //      input       scale         translate                    translate offset
-        const x = points[0] * widthScale  + ((w - viewPortWidth) / 2)  + mapLeftOffset * widthScale;
-        const y = points[1] * heightScale + ((h - viewPortHeight) / 2) + mapTopOffset  * heightScale;
+        const x = points[0] * widthScale + ((w - viewPortWidth) / 2) + mapLeftOffset * widthScale;
+        const y = points[1] * heightScale + ((h - viewPortHeight) / 2) + mapTopOffset * heightScale;
         return [x, y];
       };
     })();
@@ -887,8 +894,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     let minArea = utils.radiusToArea(Math.max(maxRadius * extent[0], minRadius));
     let maxArea = utils.radiusToArea(Math.max(maxRadius * extent[1], minRadius));
 
-    let range = minArea === maxArea? [minArea, maxArea] :
-      d3.range(minArea, maxArea, (maxArea - minArea)/this.sScale.domain().length).concat(maxArea);
+    let range = minArea === maxArea ? [minArea, maxArea] :
+      d3.range(minArea, maxArea, (maxArea - minArea) / this.sScale.domain().length).concat(maxArea);
 
     this.sScale.range(range);
   },
@@ -1072,30 +1079,30 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     const _this = this;
 
     //this component shall fetch the preload geoshape information from a file
-    const loadFromFile = function(path, onSuccess){
+    const loadFromFile = function(path, onSuccess) {
       d3.json(path, (error, json) => {
         if (error) return console.warn("Failed loading json " + path + ". " + error);
         _this.topology = json;
         onSuccess();
       });
     }
-    
+
     //where the path to preload geoshape can be defined either directly in config:
     const topoPath = utils.getProp(this, ["model", "ui", "map", "topology", "path"]);
-    
+
     //or via an entity property in dataset:
     const topoWhich = utils.getProp(this, ["model", "ui", "map", "topology", "which"]);
     const topoKey = utils.getProp(this, ["model", "ui", "map", "topology", "key"]);
-    
+
 
     return new Promise((resolve, reject) => {
-      
+
       // priority 1: direct URL to the topojson file
-      if(topoPath){
+      if (topoPath) {
         loadFromFile(topoPath, resolve);
 
-      // priority 2: getting URL to the topojson file via DDF request
-      } else if(topoWhich){
+        // priority 2: getting URL to the topojson file via DDF request
+      } else if (topoWhich) {
         const KEY = this.model.entities.dim;
 
         //build a query to the reader to fetch preload info
@@ -1106,32 +1113,35 @@ const BubbleMapComponent = Component.extend("bubblemap", {
             key: [KEY],
             value: [topoWhich]
           },
-          where: { $and: [
-            { [KEY]: "$" + KEY }
-          ] },
+          where: {
+            $and: [
+              { [KEY]: "$" + KEY }
+            ]
+          },
           join: {
-            ["$" + KEY]: { key: KEY, where: { [KEY]: { $in: [topoKey||"world"] } } }
+            ["$" + KEY]: { key: KEY, where: { [KEY]: { $in: [topoKey || "world"] } } }
           },
         };
-        
-        const dataPromise = this.model.data.load(query, {[topoWhich]: d => d});
-        
+
+        const dataPromise = this.model.data.load(query, { [topoWhich]: d => d });
+
         dataPromise.then(
-          function(dataId){
+          function(dataId) {
             loadFromFile(_this.model.data.path + "/" + _this.model.data.getData(dataId)[0][topoWhich], resolve);
           },
           err => utils.warn("Problem with Preload query: ", err, JSON.stringify(query))
         );
-        
-      // priority 3: no clues provided, go for a hardcoded filename for a world map
+
+        // priority 3: no clues provided, go for a hardcoded filename for a world map
       } else {
-      
-        loadFromFile(globals.ext_resources.host + globals.ext_resources.preloadPath + "world-50m.json", resolve);
+        const { preloadPath } = this.model.data;
+        if(!preloadPath) utils.warn("preloadPath is not defined in data model config!")
+        loadFromFile(preloadPath + "world-50m.json", resolve);
       }
 
     });
   }
-  
+
 
 });
 
