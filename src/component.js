@@ -1079,10 +1079,9 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     const _this = this;
 
     //this component shall fetch the preload geoshape information from a file
-    const loadFromFile = function(path, onSuccess) {
-      d3.json(path, (error, json) => {
-        if (error) return console.warn("Failed loading json " + path + ". " + error);
-        _this.topology = json;
+    const loadFromFile = function(assetName, onSuccess) {
+      _this.model.data.getAsset(assetName, function(response){
+        _this.topology = response;
         onSuccess();
       });
     }
@@ -1127,16 +1126,14 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
         dataPromise.then(
           function(dataId) {
-            loadFromFile(_this.model.data.path + "/" + _this.model.data.getData(dataId)[0][topoWhich], resolve);
+            loadFromFile(_this.model.data.getData(dataId)[0][topoWhich], resolve);
           },
           err => utils.warn("Problem with Preload query: ", err, JSON.stringify(query))
         );
 
         // priority 3: no clues provided, go for a hardcoded filename for a world map
       } else {
-        const { assetsPath } = this.model.data;
-        if(!assetsPath) utils.warn("assetsPath is not defined in data model config!")
-        loadFromFile(assetsPath + "world-50m.json", resolve);
+        loadFromFile("world-50m.json", resolve);
       }
 
     });
