@@ -173,7 +173,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
     this.updateUIStrings();
 
-    this.wScale = d3.scale.linear()
+    this.wScale = d3.scaleLinear()
       .domain(this.model.ui.datawarning.doubtDomain)
       .range(this.model.ui.datawarning.doubtRange);
 
