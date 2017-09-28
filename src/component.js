@@ -148,7 +148,6 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.cInfoEl = this.graph.select(".vzb-bmc-axis-c-info");
 
     this.entityBubbles = null;
-    this.tooltip = this.element.select(".vzb-bmc-tooltip");
 
     // year background
     this.yearEl = this.graph.select(".vzb-bmc-year");
@@ -1016,62 +1015,26 @@ const BubbleMapComponent = Component.extend("bubblemap", {
   },
 
   _setTooltip(d) {
-    const _this = this;
     if (d) {
-      const tooltipText = d.label;
-      let x = d.cLoc[0];
-      let y = d.cLoc[1];
-      const offset = d.r;
+      const KEY = this.KEY;
+      const values = this.values;
+      const labelValues = {};
+      const tooltipCache = {};
       const mouse = d3.mouse(this.graph.node()).map(d => parseInt(d));
-      let xPos, yPos, xSign = -1,
-        ySign = -1,
-        xOffset = 0,
-        yOffset = 0;
+      const x = d.cLoc[0] || mouse[0];
+      const y = d.cLoc[1] || mouse[1];
+      const offset = d.r || 0;
 
-      if (offset) {
-        xOffset = offset * 0.71; // .71 - sin and cos for 315
-        yOffset = offset * 0.71;
-      }
-      //position tooltip
-      this.tooltip.classed("vzb-hidden", false)
-      //.attr("style", "left:" + (mouse[0] + 50) + "px;top:" + (mouse[1] + 50) + "px")
-        .selectAll("text")
-        .text(tooltipText);
+      labelValues.valueS = values.size[d[KEY]];
+      labelValues.labelText = labelValues.valueL = values.label[d[KEY]];
+      tooltipCache.labelX0 = labelValues.valueX = x / this.width;
+      tooltipCache.labelY0 = labelValues.valueY = y / this.height;
+      tooltipCache.scaledS0 = offset;
+      tooltipCache.scaledC0 = null;
 
-      const contentBBox = this.tooltip.select("text").node().getBBox();
-      if (x - xOffset - contentBBox.width < 0) {
-        xSign = 1;
-        x += contentBBox.width + 5; // corrective to the block Radius and text padding
-      } else {
-        x -= 5; // corrective to the block Radius and text padding
-      }
-      if (y - yOffset - contentBBox.height < 0) {
-        ySign = 1;
-        y += contentBBox.height;
-      } else {
-        y -= 11; // corrective to the block Radius and text padding
-      }
-      if (offset) {
-        xPos = x + xOffset * xSign;
-        yPos = y + yOffset * ySign; // 5 and 11 - corrective to the block Radius and text padding
-      } else {
-        xPos = x + xOffset * xSign; // .71 - sin and cos for 315
-        yPos = y + yOffset * ySign; // 5 and 11 - corrective to the block Radius and text padding
-      }
-      this.tooltip.attr("transform", "translate(" + (xPos ? xPos : mouse[0]) + "," + (yPos ? yPos : mouse[1]) +
-        ")");
-
-      this.tooltip.select("rect").attr("width", contentBBox.width + 8)
-        .attr("height", contentBBox.height * 1.2)
-        .attr("x", -contentBBox.width - 4)
-        .attr("y", -contentBBox.height * 0.85)
-        .attr("rx", contentBBox.height * 0.2)
-        .attr("ry", contentBBox.height * 0.2);
-
-
+      this._labels.setTooltip(d, labelValues.labelText, tooltipCache, labelValues);
     } else {
-
-      this.tooltip.classed("vzb-hidden", true);
+      this._labels.setTooltip();
     }
   },
 
