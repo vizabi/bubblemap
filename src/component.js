@@ -43,7 +43,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       },
       {
         name: "marker",
-        type: "model"
+        type: "marker"
       },
       {
         name: "locale",
