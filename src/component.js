@@ -38,10 +38,6 @@ const BubbleMapComponent = Component.extend("bubblemap", {
         type: "time"
       },
       {
-        name: "entities",
-        type: "entities"
-      },
-      {
         name: "marker",
         type: "marker"
       },
@@ -167,8 +163,11 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
     this.initMap();
 
-    this.KEY = this.model.entities.getDimension();
     this.TIMEDIM = this.model.time.getDimension();
+    this.KEYS = utils.unique(this.model.marker._getAllDimensions({ exceptType: "time" }));
+    this.KEY = this.KEYS.join(",");
+    this.dataKeys = this.model.marker.getDataKeysPerHook();
+    this.labelNames = this.model.marker.getLabelHookNames();
 
     this.updateUIStrings();
 
@@ -184,6 +183,11 @@ const BubbleMapComponent = Component.extend("bubblemap", {
    */
   ready() {
     const _this = this;
+    this.KEYS = utils.unique(this.model.marker._getAllDimensions({ exceptType: "time" }));
+    this.KEY = this.KEYS.join(",");
+    this.dataKeys = this.model.marker.getDataKeysPerHook();
+    this.labelNames = this.model.marker.getLabelHookNames();
+
     this.updateUIStrings();
     this.updateIndicators();
     this.updateSize();
@@ -338,8 +342,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       const unitS = conceptPropsS.unit || "";
       const unitC = conceptPropsC.unit || "";
 
-      const valueS = _this.values.size[hovered[_this.KEY]];
-      let valueC = _this.values.color[hovered[_this.KEY]];
+      const valueS = _this.values.size[utils.getKey(hovered, this.dataKeys.size)];
+      let valueC = _this.values.color[utils.getKey(hovered, this.dataKeys.color)];
 
       //resolve value for color from the color legend model
       if (_this.model.marker.color.isDiscrete() && valueC) {
@@ -441,7 +445,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
           const pointer = {};
           pointer[KEY] = d[KEY];
           pointer[TIMEDIM] = endTime;
-          pointer.sortValue = _this.values.size[d[KEY]] || 0;
+          pointer.sortValue = _this.values.size[utils.getKey(d, _this.dataKeys.size)] || 0;
           pointer[KEY] = prefix + d[KEY];
           return pointer;
         })
@@ -510,13 +514,13 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
   unselectBubblesWithNoData(frame) {
     const _this = this;
-    const KEY = this.KEY;
     if (!frame) frame = this.values;
 
     if (!frame || !frame.size) return;
 
     this.model.marker.select.forEach(d => {
-      if (!frame.size[d[KEY]] && frame.size[d[KEY]] !== 0)
+      const valueS = frame.size[utils.getKey(d, _this.dataKeys.size)];
+      if (!valueS && valueS !== 0)
         _this.model.marker.selectMarker(d);
     });
   },
@@ -526,15 +530,18 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     if (!duration) duration = this.duration;
     if (!reposition) reposition = true;
     if (!this.entityBubbles) return utils.warn("redrawDataPoints(): no entityBubbles defined. likely a premature call, fix it!");
+    const dataKeys = this.dataKeys;
+    const values = this.values;
+    
     this.entityBubbles.each(function(d, index) {
       const view = d3.select(this);
       const geo = d3.select("#" + d[_this.KEY]);
 
-      const valueX = _this.values.hook_lng[d[_this.KEY]];
-      const valueY = _this.values.hook_lat[d[_this.KEY]];
-      const valueS = _this.values.size[d[_this.KEY]];
-      const valueC = _this.values.color[d[_this.KEY]];
-      const valueL = _this.values.label[d[_this.KEY]];
+      const valueX = values.hook_lng[utils.getKey(d, dataKeys.hook_lng)];
+      const valueY = values.hook_lat[utils.getKey(d, dataKeys.hook_lat)];
+      const valueS = values.size[utils.getKey(d, dataKeys.size)];
+      const valueC = values.color[utils.getKey(d, dataKeys.color)];
+      const valueL = values.label[utils.getKey(d, dataKeys.label)];
 
       d.hidden_1 = d.hidden;
       d.hidden = (!valueS && valueS !== 0) || valueX == null || valueY == null;
@@ -985,8 +992,9 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       cache.labelY0 = valueY / this.height;
       cache.scaledS0 = valueS ? utils.areaToRadius(_this.sScale(valueS)) : null;
       cache.scaledC0 = valueC != null ? _this.cScale(valueC) : _this.COLOR_WHITEISH;
+      const labelText = this._getLabelText(this.values, this.labelNames, d);
 
-      this._labels.updateLabel(d, index, cache, valueX / this.width, valueY / this.height, valueS, valueC, valueL, valueLST, duration, showhide);
+      this._labels.updateLabel(d, index, cache, valueX / this.width, valueY / this.height, valueS, valueC, labelText, valueLST, duration, showhide);
     }
   },
 
@@ -1014,6 +1022,10 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.nonSelectedOpacityZero = false;
   },
 
+  _getLabelText(values, labelNames, d) {
+    return this.KEYS.map(key => values[labelNames[key]] ? values[labelNames[key]][d[key]] : d[key]).join(", ");    
+  },
+
   _setTooltip(d) {
     if (d) {
       const KEY = this.KEY;
@@ -1025,8 +1037,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       const y = d.cLoc[1] || mouse[1];
       const offset = d.r || 0;
 
-      labelValues.valueS = values.size[d[KEY]];
-      labelValues.labelText = labelValues.valueL = values.label[d[KEY]];
+      labelValues.valueS = values.size[utils.getKey(d, this.dataKeys.size)];
+      labelValues.labelText = this._getLabelText(values, this.labelNames, d);
       tooltipCache.labelX0 = labelValues.valueX = x / this.width;
       tooltipCache.labelY0 = labelValues.valueY = y / this.height;
       tooltipCache.scaledS0 = offset;
@@ -1065,7 +1077,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
         // priority 2: getting URL to the topojson file via DDF request
       } else if (topoWhich) {
-        const KEY = this.model.entities.dim;
+        const KEY = this.model.marker._getFirstDimension({ exceptType: "time" });
 
         //build a query to the reader to fetch preload info
         const query = {
