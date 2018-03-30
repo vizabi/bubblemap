@@ -125,17 +125,7 @@ const BubbleMap = Vizabi.Tool.extend("BubbleMap", {
         color: {
           syncModels: ["marker_colorlegend"],
           "autoconfig": {}
-        },
-        size_label: {
-          use: "constant",
-          which: "_default",
-          scaleType: "ordinal",
-          _important: false,
-          extent: [0, 0.33],
-          allow: {
-            names: ["_default"]
-          }
-        },
+        }
       },
       "marker_colorlegend": {
         "space": ["entities_colorlegend"],
