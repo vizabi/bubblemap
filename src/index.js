@@ -60,13 +60,97 @@ const BubbleMap = Vizabi.Tool.extend("BubbleMap", {
   default_model: {
     state: {
       time: {
-        "delay": 100,
-        "delayThresholdX2": 50,
-        "delayThresholdX4": 25
+        "autoconfig": {
+          "type": "time"
+        }
       },
       entities: {
-        "opacitySelectDim": 0.3,
-        "opacityRegular": 1
+        "autoconfig": {
+          "type": "entity_domain",
+          "excludeIDs": ["tag"]
+        }
+      },
+      entities_colorlegend: {
+        "autoconfig": {
+          "type": "entity_domain",
+          "excludeIDs": ["tag"]
+        }
+      },
+      entities_tags: {
+        "autoconfig": {
+          "type": "entity_domain",
+          "includeOnlyIDs": ["tag"]
+        }
+      },
+      marker_tags: {
+        space: ["entities_tags"],
+        label: {
+          use: "property",
+          which: "name"
+        },
+        hook_parent: {}
+      },
+      marker: {
+        limit: 5000,
+        space: ["entities", "time"],
+        hook_lat: {
+          use: "property",
+          "autoconfig": {
+            index: 0,
+            type: "measure"
+          },
+          _important: true
+        },
+        hook_lng: {
+          use: "property",
+          "autoconfig": {
+            index: 1,
+            type: "measure"
+          },
+          _important: true
+        },
+        label: {
+          use: "property",
+          "autoconfig": {
+            "includeOnlyIDs": ["name"],
+            "type": "string"
+          }
+        },
+        size: {
+          "autoconfig": {
+              index: 2,
+              type: "measure"
+            }
+        },
+        color: {
+          syncModels: ["marker_colorlegend"],
+          "autoconfig": {}
+        },
+        size_label: {
+          use: "constant",
+          which: "_default",
+          scaleType: "ordinal",
+          _important: false,
+          extent: [0, 0.33],
+          allow: {
+            names: ["_default"]
+          }
+        },
+      },
+      "marker_colorlegend": {
+        "space": ["entities_colorlegend"],
+        "label": {
+          "use": "property",
+          "which": "name"
+        },
+        "hook_rank": {
+          "use": "property",
+          "which": "rank"
+        },
+        "hook_geoshape": {
+          "use": "property",
+          "which": "shape_lores_svg"
+        }
       }
     },
     locale: { },
