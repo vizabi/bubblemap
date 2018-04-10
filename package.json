@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "cross-env": "^5.0.0",
-    "vizabi": "^0.23.0-28",
+    "vizabi": "latest",
     "vizabi-tool-bundler": "github:vizabi/vizabi-tool-bundler"
   },
   "name": "vizabi-bubblemap",
