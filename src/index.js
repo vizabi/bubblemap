@@ -37,7 +37,7 @@ const BubbleMap = Vizabi.Tool.extend("BubbleMap", {
     }, {
       component: Vizabi.Component.get("treemenu"),
       placeholder: ".vzb-tool-treemenu",
-      model: ["state.marker", "state.marker_tags", "state.time", "locale"]
+      model: ["state.marker", "state.time", "locale"]
     }, {
       component: Vizabi.Component.get("datawarning"),
       placeholder: ".vzb-tool-datawarning",
@@ -75,20 +75,6 @@ const BubbleMap = Vizabi.Tool.extend("BubbleMap", {
           "type": "entity_domain",
           "excludeIDs": ["tag"]
         }
-      },
-      entities_tags: {
-        "autoconfig": {
-          "type": "entity_domain",
-          "includeOnlyIDs": ["tag"]
-        }
-      },
-      marker_tags: {
-        space: ["entities_tags"],
-        label: {
-          use: "property",
-          which: "name"
-        },
-        hook_parent: {}
       },
       marker: {
         limit: 5000,
