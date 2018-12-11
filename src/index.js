@@ -162,7 +162,7 @@ const BubbleMap = Vizabi.Tool.extend("BubbleMap", {
         doubtDomain: [],
         doubtRange: []
       },
-      "buttons": ["colors", "find", "size", "moreoptions", "fullscreen", "presentation"],
+      "buttons": ["colors", "find", "size", "moreoptions", "presentation", "sidebarcollapse", "fullscreen"],
       "dialogs": {
         "popup": ["colors", "find", "size", "moreoptions"],
         "sidebar": ["colors", "find", "size"],

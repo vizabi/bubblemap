@@ -14,7 +14,7 @@
     "vizabi-tool-bundler": "github:vizabi/vizabi-tool-bundler"
   },
   "name": "vizabi-bubblemap",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vizabi/vizabi-bubblemap.git"
