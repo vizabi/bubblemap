@@ -74,6 +74,10 @@ const BubbleMapComponent = Component.extend("bubblemap", {
           _this.ready();
         }
       },
+      "change:ui.chart.showForecastOverlay": function(evt) {
+        if (!_this._readyOnce) return;
+        _this._updateForecastOverlay();
+      },
       "change:marker.size.extent": function(evt, path) {
         //console.log("EVENT change:marker:size:max");
         if (!_this._readyOnce || !_this.entityBubbles) return;
@@ -142,6 +146,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.cTitleEl = this.graph.select(".vzb-bmc-axis-c-title");
     this.yInfoEl = this.graph.select(".vzb-bmc-axis-y-info");
     this.cInfoEl = this.graph.select(".vzb-bmc-axis-c-info");
+    this.forecastOverlay = this.element.select(".vzb-bmc-forecastoverlay");
 
     this.entityBubbles = null;
 
@@ -603,11 +608,15 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.time = this.model.time.value;
     this.duration = this.model.time.playing && (this.time - this.time_1 > 0) ? this.model.time.delayAnimations : 0;
     this.year.setText(this.model.time.formatDate(this.time), this.duration);
+    this._updateForecastOverlay();
 
     //possibly update the exact value in size title
     this.updateTitleNumbers();
   },
 
+  _updateForecastOverlay() {
+    this.forecastOverlay.classed("vzb-hidden", (this.model.time.value <= this.model.time.endBeforeForecast) || !this.model.time.endBeforeForecast || !this.model.ui.chart.showForecastOverlay);
+  },
 
   fitSizeOfTitles() {
     // reset font sizes first to make the measurement consistent
