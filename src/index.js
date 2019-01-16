@@ -166,7 +166,7 @@ const BubbleMap = Vizabi.Tool.extend("BubbleMap", {
       "dialogs": {
         "popup": ["colors", "find", "size", "moreoptions"],
         "sidebar": ["colors", "find", "size"],
-        "moreoptions": ["opacity", "speed", "size", "colors", "presentation", "about"]
+        "moreoptions": ["opacity", "speed", "size", "colors", "presentation", "technical", "about"]
       },
       presentation: false
     }
