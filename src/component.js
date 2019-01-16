@@ -551,24 +551,25 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
       d.hidden_1 = d.hidden;
       d.hidden = (!valueS && valueS !== 0) || valueX == null || valueY == null;
+      const showhide = d.hidden !== d.hidden_1;
 
-
-      if (d.hidden !== d.hidden_1) {
-        if (duration) {
-          view.transition().duration(duration).ease(d3.easeLinear)
-            .style("opacity", 0)
-            .on("end", () => view.classed("vzb-hidden", d.hidden).style("opacity", _this.model.marker.opacityRegular));
-        } else {
-          view.classed("vzb-hidden", d.hidden);
+      if (d.hidden) {
+        if (showhide) {
+          if (duration) {
+            view.transition().duration(duration).ease(d3.easeLinear)
+              .style("opacity", 0)
+              .on("end", () => view.classed("vzb-hidden", d.hidden).style("opacity", _this.model.marker.opacityRegular));
+          } else {
+            view.classed("vzb-hidden", d.hidden);
+          }
         }
-      }
-      if (!d.hidden) {
+        _this._updateLabel(d, index, 0, 0, valueS, valueC, valueL, duration);
+      } else {
 
         d.r = utils.areaToRadius(_this.sScale(valueS || 0));
         d.label = valueL;
 
-        view.classed("vzb-hidden", false)
-          .attr("fill", valueC != null ? _this.cScale(valueC) : _this.COLOR_WHITEISH);
+        view.attr("fill", valueC != null ? _this.cScale(valueC) : _this.COLOR_WHITEISH);
 
         if (_this.model.ui.map.colorGeo)
           geo.style("fill", valueC != null ? _this.cScale(valueC) : "#999");
@@ -581,19 +582,28 @@ const BubbleMapComponent = Component.extend("bubblemap", {
         }
 
         if (duration) {
-          view.transition().duration(duration).ease(d3.easeLinear)
-            .attr("r", d.r);
+          if (showhide) {
+            const opacity = view.style("opacity");
+            view.classed("vzb-hidden", d.hidden);
+            view.style("opacity", 0)
+              .attr("r", d.r)
+              .transition().duration(duration).ease(d3.easeExp)
+              .style("opacity", opacity);
+            
+          } else {
+            view.transition().duration(duration).ease(d3.easeLinear)
+              .attr("r", d.r);
+          }
         } else {
           view.interrupt()
             .attr("r", d.r)
             .transition();
+
+          if (showhide) view.classed("vzb-hidden", d.hidden);
         }
 
         _this._updateLabel(d, index, d.cLoc[0], d.cLoc[1], valueS, valueC, d.label, duration);
-      } else {
-        _this._updateLabel(d, index, 0, 0, valueS, valueC, valueL, duration);
       }
-
     });
   },
 
