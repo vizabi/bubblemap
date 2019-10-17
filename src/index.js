@@ -155,7 +155,8 @@ const BubbleMap = Vizabi.Tool.extend("BubbleMap", {
       chart: {
         superhighlightOnMinimapHover: true,
         labels: {
-          dragging: true
+          dragging: true,
+          enabled: true
         }
       },
       datawarning: {
