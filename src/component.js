@@ -1,157 +1,736 @@
-const {
-  _globals: globals,
-  utils,
-  Component,
-  helpers: {
-    labels: Labels,
-    topojson,
-    "d3.geoProjection": d3GeoProjection,
-    "d3.dynamicBackground": DynamicBackground,
+import { BaseComponent } from "VizabiSharedComponents";
+import { LegacyUtils as utils} from "VizabiSharedComponents";
+import { Icons } from "VizabiSharedComponents";
+
+import topojson from "./topojson.js";
+import d3GeoProjection from "./d3.geoProjection.js";
+
+const {ICON_WARN, ICON_QUESTION} = Icons;
+const COLOR_BLACKISH = "rgb(51, 51, 51)";
+const COLOR_WHITEISH = "rgb(253, 253, 253)";
+
+// const {
+//   helpers: {
+//     labels: Labels,
+//     topojson,
+//     "d3.geoProjection": d3GeoProjection,
+//     "d3.dynamicBackground": DynamicBackground,
+//   },
+//   iconset: {
+//     warn: iconWarn,
+//     question: iconQuestion,
+//   },
+// } = Vizabi;
+const PROFILE_CONSTANTS = {
+  SMALL: {
+    margin: { top: 10, right: 10, left: 10, bottom: 0 },
+    infoElHeight: 16,
+    minRadiusPx: 0.5,
+    maxRadiusEm: 0.05
   },
-  iconset: {
-    warn: iconWarn,
-    question: iconQuestion,
+  MEDIUM: {
+    margin: { top: 20, right: 20, left: 20, bottom: 30 },
+    infoElHeight: 20,
+    minRadiusPx: 1,
+    maxRadiusEm: 0.05
   },
-} = Vizabi;
+  LARGE: {
+    margin: { top: 30, right: 30, left: 30, bottom: 35 },
+    infoElHeight: 22,
+    minRadiusPx: 1,
+    maxRadiusEm: 0.05
+  }
+};
+
+const PROFILE_CONSTANTS_FOR_PROJECTOR = {
+  MEDIUM: {
+    infoElHeight: 26
+  },
+  LARGE: {
+    infoElHeight: 32
+  }
+};
+
+export default class VizabiBubblemap extends BaseComponent {
+
+  constructor(config) {
+    config.template = `
+      <svg class="vzb-bmc-map-background vzb-export">
+      <g class="vzb-bmc-map-graph"></g>
+      </svg>
+      <svg class="vzb-bubblemap-svg vzb-export">
+          <g class="vzb-bmc-graph">
+              <g class="vzb-bmc-year"></g>
+
+              <g class="vzb-bmc-lines"></g>
+              <g class="vzb-bmc-bubbles"></g>
+              <g class="vzb-bmc-bubble-labels"></g>
 
 
-// BUBBLE MAP CHART COMPONENT
-const BubbleMapComponent = Component.extend("bubblemap", {
-  /**
-   * Initializes the component (Bubble Map Chart).
-   * Executed once before any template is rendered.
-   * @param {Object} config The config passed to the component
-   * @param {Object} context The component's parent
-   */
-  init(config, context) {
-    this.name = "bubblemap";
-    this.template = require("./template.html");
-    this.bubblesDrawing = null;
+              <g class="vzb-bmc-axis-y-title">
+                  <text></text>
+              </g>
 
+              <g class="vzb-bmc-axis-c-title">
+                  <text></text>
+              </g>
+
+              <g class="vzb-bmc-axis-y-info vzb-noexport">
+              </g>
+
+              <g class="vzb-bmc-axis-c-info vzb-noexport">
+              </g>
+
+              <g class="vzb-data-warning vzb-noexport">
+                  <svg></svg>
+                  <text></text>
+              </g>
+              <g class="vzb-bmc-labels"></g>
+          </g>
+          <rect class="vzb-bmc-forecastoverlay vzb-hidden" x="0" y="0" width="100%" height="100%" fill="url(#vzb-bmc-pattern-lines)" pointer-events='none'></rect>
+      </svg>
+      <svg>
+          <defs>
+              <pattern id="vzb-bmc-pattern-lines" x="0" y="0" patternUnits="userSpaceOnUse" width="50" height="50" viewBox="0 0 10 10"> 
+                  <path d='M-1,1 l2,-2M0,10 l10,-10M9,11 l2,-2' stroke='black' stroke-width='3' opacity='0.08'/>
+              </pattern> 
+          </defs>
+      </svg>
+    `;
+    super(config);
+  }
+
+  setup() {
+    this.state = {
+      showForecastOverlay: false,
+      opacityHighlightDim: 0.1,
+      opacitySelectDim: 0.3,
+      opacityRegular: 1,
+      datawarning: {
+        doubtDomain: [],
+        doubtRange: []
+      },
+      superhighlightOnMinimapHover: true,
+      labels: {
+        dragging: true,
+        enabled: true
+      },
+      map: {
+        path: null,
+        colorGeo: false,
+        preserveAspectRatio: false,
+        scale: 0.95,
+        offset: {
+          top: 0.05,
+          right: 0,
+          bottom: -0.12,
+          left: 0
+        },
+        projection: "geoAzimuthalEqualArea",
+        topology: {
+          path: null,
+          objects: {
+            geo: "land",
+            boundaries: "countries"
+          },
+          geoIdProperty: null,
+        }
+      }
+    };
+
+
+    this.DOM = {
+      element: this.element,
+
+      graph: this.element.select(".vzb-bmc-graph"),
+      mapSvg: this.element.select(".vzb-bmc-map-background"),
+      mapGraph: this.element.select(".vzb-bmc-map-graph"),
+  
+      bubbleContainerCrop: this.element.select(".vzb-bmc-bubbles-crop"),
+      bubbleContainer: this.element.select(".vzb-bmc-bubbles"),
+      labelListContainer: this.element.select(".vzb-bmc-bubble-labels"),
+      dataWarning: this.element.select(".vzb-data-warning"),
+  
+      yTitle: this.element.select(".vzb-bmc-axis-y-title"),
+      cTitle: this.element.select(".vzb-bmc-axis-c-title"),
+      yInfo: this.element.select(".vzb-bmc-axis-y-info"),
+      cInfo: this.element.select(".vzb-bmc-axis-c-info"),
+      forecastOverlay: this.element.select(".vzb-bmc-forecastoverlay")
+    };
+
+    this.wScale = d3.scaleLinear()
+      .domain(this.state.datawarning.doubtDomain)
+      .range(this.state.datawarning.doubtRange);
 
     this.isMobile = utils.isMobileOrTablet();
+    
+    
+    d3GeoProjection();
 
-    //define expected models for this component
-    this.model_expects = [
-      {
-        name: "time",
-        type: "time"
-      },
-      {
-        name: "marker",
-        type: "marker"
-      },
-      {
-        name: "locale",
-        type: "locale"
-      },
-      {
-        name: "ui",
-        type: "ui"
-      },
-      {
-        name: "data",
-        type: "data"
+    // this._labels = new Labels(this);
+    // this._labels.config({
+    //   CSS_PREFIX: "vzb-bmc",
+    //   LABELS_CONTAINER_CLASS: "vzb-bmc-labels",
+    //   LINES_CONTAINER_CLASS: "vzb-bmc-lines",
+    //   SUPPRESS_HIGHLIGHT_DURING_PLAY: false
+    // });
+  }
+
+
+  draw(){
+    this.MDL = {
+      frame: this.model.encoding.get("frame"),
+      selected: this.model.encoding.get("selected").data.filter,
+      highlighted: this.model.encoding.get("highlighted").data.filter,
+      size: this.model.encoding.get("size"),
+      color: this.model.encoding.get("color"),
+      label: this.model.encoding.get("label")
+    };
+    this.localise = this.services.locale.auto();
+
+    // new scales and axes
+    this.sScale = this.MDL.size.scale.d3Scale.copy();
+    this.cScale = this.MDL.color.scale.d3Scale;
+
+
+    this.preload().then(()=>{
+      if (this._updateLayoutProfile()) return; //return if exists with error
+      this.addReaction(this.updateSize);
+
+      this.addReaction(this._initMap);
+      this.addReaction(this._rescaleMap);
+
+      this.addReaction(this._drawForecastOverlay);
+      
+      this.addReaction(this._getDuration);
+      //this.addReaction(this._drawHeader);
+      //this.addReaction(this._drawInfoEl);
+      //this.addReaction(this._drawFooter);
+      //this.addReaction(this._getWidestLabelWidth);
+
+      this.addReaction(this.updateMarkerSizeLimits);
+      this.addReaction(this._drawData);
+      this.addReaction(this._updateOpacity);
+      //this.addReaction(this._resizeSvg);
+      //this.addReaction(this._scroll);
+      //this.addReaction(this._drawColors);
+
+      this.addReaction(this._updateDataWarning);
+      //this.addReaction(this._unselectBubblesWithNoData);
+      //this.addReaction(this._updateMissedPositionWarning);
+    });
+  }
+
+
+  _getDuration() {
+    //smooth animation is needed when playing, except for the case when time jumps from end to start
+    if(!this.MDL.frame) return 0;
+    this.frameValue_1 = this.frameValue;
+    this.frameValue = this.MDL.frame.value;
+    return this.__duration = this.MDL.frame.playing && (this.frameValue - this.frameValue_1 > 0) ? this.MDL.frame.speed : 0;
+
+    //this.year.setText(this.model.time.formatDate(this.time), this.duration);
+    //this._updateForecastOverlay();
+
+    //possibly update the exact value in size title
+    //this.updateTitleNumbers();
+
+  }
+
+  _drawForecastOverlay() {
+    this.DOM.forecastOverlay.classed("vzb-hidden", 
+      !this.MDL.frame.endBeforeForecast || 
+      !this.state.showForecastOverlay || 
+      (this.MDL.frame.value <= this.MDL.frame.endBeforeForecast)
+    );
+  }
+
+  _updateLayoutProfile(){
+    this.services.layout.width + this.services.layout.height;
+
+    this.profileConstants = this.services.layout.getProfileConstants(PROFILE_CONSTANTS, PROFILE_CONSTANTS_FOR_PROJECTOR);
+    this.height = (this.element.node().clientHeight) || 0;
+    this.width = (this.element.node().clientWidth) || 0;
+    if (!this.height || !this.width) return utils.warn("Chart _updateProfile() abort: container is too little or has display:none");
+
+  }
+
+
+  preload() {
+    const _this = this;
+
+    if (this.topology) return Promise.resolve();
+
+    const reader = this.model.data.source.reader;
+
+    //this component shall fetch the preload geoshape information from a file
+    const loadFromFile = function(assetName, onSuccess) {
+      reader.getAsset(assetName).then(function(response){
+        _this.topology = response;
+        onSuccess();
+      });
+    };
+
+    //where the path to preload geoshape can be defined either directly in config:
+    const topoPath = utils.getProp(this, ["state", "map", "topology", "path"]);
+
+    //or via an entity property in dataset:
+    const topoWhich = utils.getProp(this, ["state", "map", "topology", "which"]);
+    const topoKey = utils.getProp(this, ["state", "map", "topology", "key"]);
+
+
+    return new Promise((resolve, reject) => {
+
+      // priority 1: direct URL to the topojson file
+      if (topoPath) {
+        loadFromFile(topoPath, resolve);
+
+        // priority 2: getting URL to the topojson file via DDF request
+      } else if (topoWhich) {
+        const KEY = this.model.marker._getFirstDimension({ exceptType: "time" });
+
+        //build a query to the reader to fetch preload info
+        const query = {
+          language: this.model.locale.id,
+          from: "entities",
+          select: {
+            key: [KEY],
+            value: [topoWhich]
+          },
+          where: {
+            $and: [
+              { [KEY]: "$" + KEY }
+            ]
+          },
+          join: {
+            ["$" + KEY]: { key: KEY, where: { [KEY]: { $in: [topoKey || "world"] } } }
+          },
+        };
+
+        const dataPromise = this.model.data.load(query, { [topoWhich]: d => d });
+
+        dataPromise.then(
+          function(dataId) {
+            loadFromFile(_this.model.data.getData(dataId)[0][topoWhich], resolve);
+          },
+          err => utils.warn("Problem with Preload query: ", err, JSON.stringify(query))
+        );
+
+        // priority 3: no clues provided, go for a hardcoded filename for a world map
+      } else {
+        loadFromFile("assets/world-50m.json", resolve);
       }
-    ];
+
+    });
+  }
+
+  _initMap() {
+    if (!this.topology) utils.warn("Bubble map is missing the map data:", this.topology);
+
+    // http://bl.ocks.org/mbostock/d4021aa4dccfd65edffd patterson
+    // http://bl.ocks.org/mbostock/3710566 robinson
+    // map background
+
+    if(!d3[this.state.map.projection]) return utils.warn(`Projection ${this.state.map.projection} is not available in d3`);
+
+    // project to bounding box https://bl.ocks.org/mbostock/4707858
+    this.projection = d3[this.state.map.projection]()
+      .scale(1)
+      .translate([0, 0]);
+
+    this.mapPath = d3.geoPath()
+      .projection(this.projection);
+
+    this.DOM.mapGraph.html("");
+
+    this.mapFeature = topojson.feature(this.topology, this.topology.objects[this.state.map.topology.objects.geo]);
+    const boundaries = topojson.mesh(this.topology, this.topology.objects[this.state.map.topology.objects.boundaries], (a, b) => a !== b);
+
+    this.mapBounds = this.mapPath.bounds(this.mapFeature);
+
+    if (this.mapFeature.features) {
+      this.DOM.mapGraph.selectAll(".land")
+        .data(this.mapFeature.features)
+        .enter().insert("path")
+        .attr("d", this.mapPath)
+        .attr("id", d => d.properties[this.state.map.topology.geoIdProperty].toLowerCase())
+        .attr("class", "land");
+    } else {
+      this.DOM.mapGraph.insert("path")
+        .datum(this.mapFeature)
+        .attr("class", "land");
+    }
+
+    this.DOM.mapGraph.insert("path")
+      .datum(boundaries)
+      .attr("class", "boundary");
+  }
+
+  _rescaleMap() {
+
+    const offset = this.state.map.offset;
+    const {margin} = this.profileConstants;
+
+    // scale to aspect ratio
+    // http://bl.ocks.org/mbostock/4707858
+    const s = this.state.map.scale / Math.max((this.mapBounds[1][0] - this.mapBounds[0][0]) / this.width, (this.mapBounds[1][1] - this.mapBounds[0][1]) / this.height);
+
+    // dimensions of the map itself (regardless of cropping)
+    const mapWidth = (s * (this.mapBounds[1][0] - this.mapBounds[0][0]));
+    const mapHeight = (s * (this.mapBounds[1][1] - this.mapBounds[0][1]));
+
+    // dimensions of the viewport in which the map is shown (can be bigger or smaller than map)
+    let viewPortHeight = mapHeight * (1 + offset.top + offset.bottom);
+    let viewPortWidth = mapWidth * (1 + offset.left + offset.right);
+    const mapTopOffset = mapHeight * offset.top;
+    const mapLeftOffset = mapWidth * offset.left;
+
+    // translate projection to the middle of map
+    const t = [(mapWidth - s * (this.mapBounds[1][0] + this.mapBounds[0][0])) / 2, (mapHeight - s * (this.mapBounds[1][1] + this.mapBounds[0][1])) / 2];
+
+    this.projection
+      .scale(s)
+      .translate(t);
+
+    this.DOM.mapGraph
+      .selectAll("path").attr("d", this.mapPath);
+
+    // handle scale to fit case
+    let widthScale, heightScale;
+    if (!this.state.map.preserveAspectRatio) {
+
+      // wrap viewBox around viewport so map scales to fit viewport
+      const viewBoxHeight = viewPortHeight;
+      const viewBoxWidth = viewPortWidth;
+
+      // viewport is complete area (apart from scaling)
+      viewPortHeight = this.height * this.state.map.scale;
+      viewPortWidth = this.width * this.state.map.scale;
+
+      this.DOM.mapSvg
+        .attr("preserveAspectRatio", "none")
+        .attr("viewBox", [0, 0, viewBoxWidth, viewBoxHeight].join(" "));
+
+      //            ratio between map, viewport and offset (for bubbles)
+      widthScale = viewPortWidth / (mapWidth || 1) / (1 + offset.left + offset.right);
+      heightScale = viewPortHeight / (mapHeight || 1) / (1 + offset.top + offset.bottom);
+
+    } else {
+
+      // no scaling needed
+      widthScale = 1;
+      heightScale = 1;
+
+    }
+
+    // internal offset against parent container (mapSvg)
+    this.DOM.mapGraph
+      .attr("transform", "translate(" + mapLeftOffset + "," + mapTopOffset + ")");
+
+    this.DOM.graph
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // resize and put in center
+    this.DOM.mapSvg
+      .style("transform", "translate3d(" + (margin.left + (this.width - viewPortWidth) / 2) + "px," + (margin.top + (this.height - viewPortHeight) / 2) + "px,0)")
+      .attr("width", viewPortWidth)
+      .attr("height", viewPortHeight);
+
+    // set skew function used for bubbles in chart
+    const _this = this;
+    this.skew = (function() {
+      const w = _this.width;
+      const h = _this.height;
+      //input pixel loc after projection, return pixel loc after skew;
+      return function(points) {
+        //      input       scale         translate                    translate offset
+        const x = points[0] * widthScale + ((w - viewPortWidth) / 2) + mapLeftOffset * widthScale;
+        const y = points[1] * heightScale + ((h - viewPortHeight) / 2) + mapTopOffset * heightScale;
+        return [x, y];
+      };
+    })();
+
+
+  }
+
+  getValue(d){
+    return d;
+  }
+
+  _processFrameData() {
+    return this.__dataProcessed = this.model.dataArray
+      .concat()
+      .map(this.getValue)
+      .sort((a, b) => b.size - a.size);
+  }
+
+  _createAndDeleteBubbles() {
+
+    this.bubbles = this.DOM.bubbleContainer.selectAll(".vzb-bmc-bubble")
+      .data(this.__dataProcessed, d => d[Symbol.for("key")])
+      .order();
+
+    //exit selection
+    this.bubbles.exit().remove();
+
+    //enter selection -- init circles
+    this.bubbles = this.bubbles.enter().append("circle")
+      .attr("class", "vzb-bmc-bubble")
+      .attr("id", (d) => `vzb-br-bar-${d[Symbol.for("key")]}-${this.id}`)
+      .classed("vzb-selected", (d) => this.MDL.selected.has(d))
+      .merge(this.bubbles);
+
+    if(!utils.isTouchDevice()){
+      this.bubbles
+        .on("mouseover", (d) => this.MDL.highlighted.set(d))
+        .on("mouseout", (d) => this.MDL.highlighted.delete(d))
+        .on("click", (d) => this.MDL.selected.toggle(d));
+    } else {
+      this.bubbles
+        .on("tap", (d) => {
+          this.MDL.selected.toggle(d);
+          d3.event.stopPropagation();
+        });
+    }
+  }
+
+  _drawData(duration, reposition) {
+    this._processFrameData();
+    this._createAndDeleteBubbles();
 
     const _this = this;
-    this.model_binds = {
-      "change:time.value": function(evt) {
-        if (!_this._readyOnce) return;
-        _this.model.marker.getFrame(_this.model.time.value, _this.frameChanged.bind(_this));
-      },
-      "change:marker.highlight": function(evt) {
-        if (!_this._readyOnce) return;
-        _this.highlightMarkers();
-        _this.updateOpacity();
-      },
-      "change:marker": function(evt, path) {
-        // bubble size change is processed separately
-        if (!_this._readyOnce) return;
+    if (!duration) duration = this.__duration;
+    if (!reposition) reposition = true;
+    if (!this.bubbles) return utils.warn("redrawDataPoints(): no entityBubbles defined. likely a premature call, fix it!");
 
-        if (path.indexOf("scaleType") > -1) {
-          _this.ready();
-        }
-      },
-      "change:ui.chart.showForecastOverlay": function(evt) {
-        if (!_this._readyOnce) return;
-        _this._updateForecastOverlay();
-      },
-      "change:marker.size.extent": function(evt, path) {
-        //console.log("EVENT change:marker:size:max");
-        if (!_this._readyOnce || !_this.entityBubbles) return;
-        _this.updateMarkerSizeLimits();
-        _this.redrawDataPoints(null, false);
-      },
-      "change:marker.color.palette": function(evt, path) {
-        if (!_this._readyOnce) return;
-        _this.redrawDataPoints(null, false);
-      },
-      "change:marker.select": function(evt) {
-        if (!_this._readyOnce) return;
-        _this.selectMarkers();
-        _this.redrawDataPoints(null, false);
-        _this.updateOpacity();
-        _this.updateDoubtOpacity();
+    this.bubbles.each(function(d) {
+      const view = d3.select(this);
+      const geo = d3.select("#" + d[_this.KEY]);
 
-      },
-      "change:marker.opacitySelectDim": function(evt) {
-        _this.updateOpacity();
-      },
-      "change:marker.opacityRegular": function(evt) {
-        _this.updateOpacity();
-      },
-      "change:marker.superHighlight": () => this._readyOnce && this._blinkSuperHighlighted(),
-    };
+      const valueX = d.lon;
+      const valueY = d.lat;
+      const valueS = d.size;
+      const valueC = d.color;
+      const valueL = d.label;
+
+      d.hidden = (!valueS && valueS !== 0) || valueX == null || valueY == null;
+
+      view.classed("vzb-hidden", d.hidden);
+      d.r = utils.areaToRadius(_this.sScale(valueS || 0));
+      d.cLoc = _this.skew(_this.projection([valueX || 0, valueY || 0]));
+      view
+        .attr("r", d.r)
+        .attr("fill", valueC != null ? _this.cScale(valueC) : _this.COLOR_WHITEISH)
+        .attr("cx", d.cLoc[0])
+        .attr("cy", d.cLoc[1]); 
+
+      // d.hidden_1 = d.hidden;
+      // d.hidden = (!valueS && valueS !== 0) || valueX == null || valueY == null;
+      // if(d.hidden) nulls++;
+      // const showhide = d.hidden !== d.hidden_1;
+
+      // if (d.hidden) {
+      //   if (showhide) {
+      //     if (duration) {
+      //       view.transition().duration(duration).ease(d3.easeLinear)
+      //         .style("opacity", 0)
+      //         .on("end", () => view.classed("vzb-hidden", d.hidden).style("opacity", _this.state.opacityRegular));
+      //     } else {
+      //       view.classed("vzb-hidden", d.hidden);
+      //     }
+      //   }
+      //   //_this._updateLabel(d, index, 0, 0, valueS, valueC, valueL, duration);
+      // } else {
+
+      //   d.r = utils.areaToRadius(_this.sScale(valueS || 0));
+
+      //   view.attr("fill", valueC != null ? _this.cScale(valueC) : _this.COLOR_WHITEISH);
+
+      //   if (_this.state.map.colorGeo)
+      //     geo.style("fill", valueC != null ? _this.cScale(valueC) : "#999");
+
+      //   if (reposition) {
+      //     d.cLoc = _this.skew(_this.projection([valueX || 0, valueY || 0]));
+
+      //     view.attr("cx", d.cLoc[0])
+      //       .attr("cy", d.cLoc[1]); 
+      //   }
+
+      //   if (duration) {
+      //     if (showhide) {
+      //       const opacity = view.style("opacity");
+      //       view.classed("vzb-hidden", d.hidden);
+      //       view.style("opacity", 0)
+      //         .attr("r", d.r)
+      //         .transition().duration(duration).ease(d3.easeExp)
+      //         .style("opacity", opacity);
+            
+      //     } else {
+      //       view.transition().duration(duration).ease(d3.easeLinear)
+      //         .attr("r", d.r);
+      //     }
+      //   } else {
+      //     view.interrupt()
+      //       .attr("r", d.r)
+      //       .transition();
+
+      //     if (showhide) view.classed("vzb-hidden", d.hidden);
+      //   }
+
+      //   //_this._updateLabel(d, index, d.cLoc[0], d.cLoc[1], valueS, valueC, d.label, duration);
+      // }
+    });
+
+  }
+
+  updateSize() {
+    const {
+      margin,
+      minRadiusPx,
+      maxRadiusEm
+    } = this.profileConstants;
+
+   
+
+    this.maxRadiusPx = Math.max(
+      minRadiusPx,
+      maxRadiusEm * utils.hypotenuse(this.width, this.height)
+    );
+
+    //this.repositionElements();
+    //this.rescaleMap();
+
+  }
+
+  updateMarkerSizeLimits() {
+    const {
+      minRadiusPx,
+    } = this.profileConstants;
+
+    const extent = this.MDL.size.extent || [0, 1];
+
+    let minRadius = minRadiusPx;
+    let maxRadius = this.maxRadiusPx;
+
+    let minArea = utils.radiusToArea(Math.max(maxRadius * extent[0], minRadius));
+    let maxArea = utils.radiusToArea(Math.max(maxRadius * extent[1], minRadius));
+
+    let range = minArea === maxArea ? [minArea, maxArea] :
+      d3.range(minArea, maxArea, (maxArea - minArea) / this.sScale.domain().length).concat(maxArea);
+
+    this.sScale.range(range);
+  }
+
+
+  _updateOpacity() {
+    const _this = this;
+
+    const {
+      opacityHighlightDim,
+      opacitySelectDim,
+      opacityRegular,
+    } = this.state;
+
+    const someHighlighted = this.MDL.highlighted.markers.size > 0;
+    const someSelected = this.MDL.selected.markers.size > 0;
+
+    this.bubbles
+      .style("opacity", d => {
+        if (_this.MDL.highlighted.has(d)) return opacityRegular;
+        if (_this.MDL.selected.has(d)) return opacityRegular;
+
+        if (someSelected) return opacitySelectDim;
+        if (someHighlighted) return opacityHighlightDim;
+
+        return opacityRegular;
+      });
+  }
+
+  _unselectBubblesWithNoData() {
+    //unselecting bubbles with no data is used for the scenario when
+    //some bubbles are selected and user would switch indicator.
+    //bubbles would disappear but selection would stay
+    const _this = this;
+    if (this.MDL.selected.markers.size > 0)
+      this.bubbles.each((d)=>{
+        if (!d.size && d.size !== 0) _this.MDL.selected.delete(d);
+      });
+  }
+
+  _updateDataWarning(opacity) {
+    this.DOM.dataWarning.style("opacity",
+      1 || opacity || (
+        !this.MDL.selected.markers.size ?
+          this.wScale(this.MDL.frame.value.getUTCFullYear()) :
+          1
+      )
+    );
+  }
+
+}
+
+
+    // this.model_binds = {
+    //   "change:time.value": function(evt) {
+    //     if (!_this._readyOnce) return;
+    //     _this.model.marker.getFrame(_this.model.time.value, _this.frameChanged.bind(_this));
+    //   },
+    //   "change:marker.highlight": function(evt) {
+    //     if (!_this._readyOnce) return;
+    //     _this.highlightMarkers();
+    //     _this.updateOpacity();
+    //   },
+    //   "change:marker": function(evt, path) {
+    //     // bubble size change is processed separately
+    //     if (!_this._readyOnce) return;
+
+    //     if (path.indexOf("scaleType") > -1) {
+    //       _this.ready();
+    //     }
+    //   },
+    //   "change:ui.chart.showForecastOverlay": function(evt) {
+    //     if (!_this._readyOnce) return;
+    //     _this._updateForecastOverlay();
+    //   },
+    //   "change:marker.size.extent": function(evt, path) {
+    //     //console.log("EVENT change:marker:size:max");
+    //     if (!_this._readyOnce || !_this.entityBubbles) return;
+    //     _this.updateMarkerSizeLimits();
+    //     _this.redrawDataPoints(null, false);
+    //   },
+    //   "change:marker.color.palette": function(evt, path) {
+    //     if (!_this._readyOnce) return;
+    //     _this.redrawDataPoints(null, false);
+    //   },
+    //   "change:marker.select": function(evt) {
+    //     if (!_this._readyOnce) return;
+    //     _this.selectMarkers();
+    //     _this.redrawDataPoints(null, false);
+    //     _this.updateOpacity();
+    //     _this.updateDoubtOpacity();
+
+    //   },
+    //   "change:marker.opacitySelectDim": function(evt) {
+    //     _this.updateOpacity();
+    //   },
+    //   "change:marker.opacityRegular": function(evt) {
+    //     _this.updateOpacity();
+    //   },
+    //   "change:marker.superHighlight": () => this._readyOnce && this._blinkSuperHighlighted(),
+    // };
 
     //this._selectlist = new Selectlist(this);
 
-    //contructor is the same as any component
-    this._super(config, context);
 
-    this.sScale = null;
-    this.cScale = d3.scaleOrdinal(d3.schemeCategory10);
+   class Old {
 
-    _this.COLOR_WHITEISH = "#fdfdfd";
-
-    d3GeoProjection();
-
-    this._labels = new Labels(this);
-    this._labels.config({
-      CSS_PREFIX: "vzb-bmc",
-      LABELS_CONTAINER_CLASS: "vzb-bmc-labels",
-      LINES_CONTAINER_CLASS: "vzb-bmc-lines",
-      SUPPRESS_HIGHLIGHT_DURING_PLAY: false
-    });
-  },
-
-
-  /**
-   * DOM is ready
-   */
   readyOnce() {
 
-    this.element = d3.select(this.element);
-
-    this.graph = this.element.select(".vzb-bmc-graph");
-    this.mapSvg = this.element.select(".vzb-bmc-map-background");
-
-    this.bubbleContainerCrop = this.graph.select(".vzb-bmc-bubbles-crop");
-    this.bubbleContainer = this.graph.select(".vzb-bmc-bubbles");
-    this.labelListContainer = this.graph.select(".vzb-bmc-bubble-labels");
-    this.dataWarningEl = this.graph.select(".vzb-data-warning");
-
-    this.yTitleEl = this.graph.select(".vzb-bmc-axis-y-title");
-    this.cTitleEl = this.graph.select(".vzb-bmc-axis-c-title");
-    this.yInfoEl = this.graph.select(".vzb-bmc-axis-y-info");
-    this.cInfoEl = this.graph.select(".vzb-bmc-axis-c-info");
-    this.forecastOverlay = this.element.select(".vzb-bmc-forecastoverlay");
 
     this.entityBubbles = null;
 
     // year background
-    this.yearEl = this.graph.select(".vzb-bmc-year");
+    this.yearEl = this.element.select(".vzb-bmc-year");
     this.year = new DynamicBackground(this.yearEl);
     this.year.setConditions({ xAlign: "left", yAlign: "bottom" });
 
@@ -181,11 +760,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       .range(this.model.ui.datawarning.doubtRange);
 
     this._labels.readyOnce();
-  },
+  }
 
-  /*
-   * Both model and DOM are ready
-   */
   ready() {
     const _this = this;
     this.KEYS = utils.unique(this.model.marker._getAllDimensions({ exceptType: "time" }));
@@ -219,18 +795,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       _this.updateOpacity();
     });
 
-  },
-
-  frameChanged(frame, time) {
-    if (time.toString() != this.model.time.value.toString()) return; // frame is outdated
-    if (!frame) return;
-
-    this.values = frame;
-    this.updateTime();
-    this.updateDoubtOpacity();
-    this.redrawDataPoints(null, false);
-
-  },
+  }
 
   updateUIStrings() {
     const _this = this;
@@ -325,9 +890,8 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.cInfoEl.on("mouseout", () => {
       _this.parent.findChildByName("gapminder-datanotes").hide();
     });
-  },
+  }
 
-  // show size number on title when hovered on a bubble
   updateTitleNumbers() {
     const _this = this;
 
@@ -373,260 +937,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       this.yInfoEl.classed("vzb-hidden", false);
       this.cInfoEl.classed("vzb-hidden", false || this.cTitleEl.classed("vzb-hidden"));
     }
-  },
-
-  updateDoubtOpacity(opacity) {
-    if (opacity == null) opacity = this.wScale(+this.time.getUTCFullYear().toString());
-    if (this.someSelected) opacity = 1;
-    this.dataWarningEl.style("opacity", opacity);
-  },
-
-  updateOpacity() {
-    const _this = this;
-    /*
-     this.entityBubbles.classed("vzb-selected", function (d) {
-     return _this.model.marker.isSelected(d);
-     });
-     */
-
-    const OPACITY_HIGHLT = 1.0;
-    const OPACITY_HIGHLT_DIM = 0.3;
-    const OPACITY_SELECT = 1.0;
-    const OPACITY_REGULAR = this.model.marker.opacityRegular;
-    const OPACITY_SELECT_DIM = this.model.marker.opacitySelectDim;
-
-    this.entityBubbles.style("opacity", d => {
-
-      if (_this.someHighlighted) {
-        //highlight or non-highlight
-        if (_this.model.marker.isHighlighted(d)) return OPACITY_HIGHLT;
-      }
-
-      if (_this.someSelected) {
-        //selected or non-selected
-        return _this.model.marker.isSelected(d) ? OPACITY_SELECT : OPACITY_SELECT_DIM;
-      }
-
-      if (_this.someHighlighted) return OPACITY_HIGHLT_DIM;
-
-      return OPACITY_REGULAR;
-
-    });
-
-    this.entityBubbles.classed("vzb-selected", d => _this.model.marker.isSelected(d));
-
-    const nonSelectedOpacityZero = _this.model.marker.opacitySelectDim < 0.01;
-
-    // when pointer events need update...
-    if (nonSelectedOpacityZero !== this.nonSelectedOpacityZero) {
-      this.entityBubbles.style("pointer-events", d => (!_this.someSelected || !nonSelectedOpacityZero || _this.model.marker.isSelected(d)) ?
-        "visible" : "none");
-    }
-
-    this.nonSelectedOpacityZero = _this.model.marker.opacitySelectDim < 0.01;
-  },
-
-  /**
-   * Changes labels for indicators
-   */
-  updateIndicators() {
-    this.sScale = this.model.marker.size.getScale();
-    this.cScale = this.model.marker.color.getScale();
-  },
-
-  /**
-   * Updates entities
-   */
-  updateEntities() {
-
-    const _this = this;
-    const KEYS = this.KEYS;
-    const KEY = this.KEY;
-    const TIMEDIM = this.TIMEDIM;
-
-    const getKeys = function(prefix) {
-      prefix = prefix || "";
-      return _this.model.marker.getKeys()
-        .map(d => {
-          const pointer = Object.assign({}, d);
-          //pointer[KEY] = d[KEY];
-          pointer[TIMEDIM] = endTime;
-          pointer.sortValue = _this.values.size[utils.getKey(d, _this.dataKeys.size)] || 0;
-          pointer[KEY] = prefix + utils.getKey(d, KEYS);
-          return pointer;
-        })
-        .sort((a, b) => b.sortValue - a.sortValue);
-    };
-
-    // get array of GEOs, sorted by the size hook
-    // that makes larger bubbles go behind the smaller ones
-    const endTime = this.model.time.end;
-    this.model.marker.setVisible(getKeys.call(this));
-
-    //unselecting bubbles with no data is used for the scenario when
-    //some bubbles are selected and user would switch indicator.
-    //bubbles would disappear but selection would stay
-    if (!this.model.time.splash) {
-      this.unselectBubblesWithNoData();
-    }
-
-    // TODO: add to csv
-    //Africa 9.1021° N, 18.2812°E
-    //Europe 53.0000° N, 9.0000° E
-    //Asia 49.8380° N, 105.8203° E
-    //north American 48.1667° N and longitude 100.1667° W
-    /*
-     var pos = {
-     "afr": {lat: 9.1, lng: 18.3},
-     "eur": {lat: 53.0, lng: 9.0},
-     "asi": {lat: 49.8, lng: 105.8},
-     "ame": {lat: 48.2, lng: -100.2},
-     };
-     */
-
-
-    this.entityBubbles = this.bubbleContainer.selectAll(".vzb-bmc-bubble")
-      .data(this.model.marker.getVisible(), d => d[KEY])
-      .order();
-
-    //exit selection
-    this.entityBubbles.exit().remove();
-
-    //enter selection -- init circles
-    this.entityBubbles = this.entityBubbles.enter().append("circle")
-      .attr("class", "vzb-bmc-bubble")
-      .on("mouseover", (d, i) => {
-        if (utils.isTouchDevice()) return;
-        _this._interact()._mouseover(d, i);
-      })
-      .on("mouseout", (d, i) => {
-        if (utils.isTouchDevice()) return;
-        _this._interact()._mouseout(d, i);
-      })
-      .on("click", (d, i) => {
-        if (utils.isTouchDevice()) return;
-        _this._interact()._click(d, i);
-        _this.highlightMarkers();
-      })
-      .onTap((d, i) => {
-        _this._interact()._click(d, i);
-        d3.event.stopPropagation();
-      })
-      .onLongTap((d, i) => {
-      })
-      .merge(this.entityBubbles);
-
-  },
-
-  unselectBubblesWithNoData(frame) {
-    const _this = this;
-    if (!frame) frame = this.values;
-
-    if (!frame || !frame.size) return;
-
-    this.model.marker.select.forEach(d => {
-      const valueS = frame.size[utils.getKey(d, _this.dataKeys.size)];
-      if (!valueS && valueS !== 0)
-        _this.model.marker.selectMarker(d);
-    });
-  },
-
-  redrawDataPoints(duration, reposition) {
-    const _this = this;
-    if (!duration) duration = this.duration;
-    if (!reposition) reposition = true;
-    if (!this.entityBubbles) return utils.warn("redrawDataPoints(): no entityBubbles defined. likely a premature call, fix it!");
-    const dataKeys = this.dataKeys;
-    const values = this.values;
-    
-    this.entityBubbles.each(function(d, index) {
-      const view = d3.select(this);
-      const geo = d3.select("#" + d[_this.KEY]);
-
-      const valueX = values.hook_lng[utils.getKey(d, dataKeys.hook_lng)];
-      const valueY = values.hook_lat[utils.getKey(d, dataKeys.hook_lat)];
-      const valueS = values.size[utils.getKey(d, dataKeys.size)];
-      const valueC = values.color[utils.getKey(d, dataKeys.color)];
-      const valueL = values.label[utils.getKey(d, dataKeys.label)];
-
-      d.hidden_1 = d.hidden;
-      d.hidden = (!valueS && valueS !== 0) || valueX == null || valueY == null;
-      const showhide = d.hidden !== d.hidden_1;
-
-      if (d.hidden) {
-        if (showhide) {
-          if (duration) {
-            view.transition().duration(duration).ease(d3.easeLinear)
-              .style("opacity", 0)
-              .on("end", () => view.classed("vzb-hidden", d.hidden).style("opacity", _this.model.marker.opacityRegular));
-          } else {
-            view.classed("vzb-hidden", d.hidden);
-          }
-        }
-        _this._updateLabel(d, index, 0, 0, valueS, valueC, valueL, duration);
-      } else {
-
-        d.r = utils.areaToRadius(_this.sScale(valueS || 0));
-        d.label = valueL;
-
-        view.attr("fill", valueC != null ? _this.cScale(valueC) : _this.COLOR_WHITEISH);
-
-        if (_this.model.ui.map.colorGeo)
-          geo.style("fill", valueC != null ? _this.cScale(valueC) : "#999");
-
-        if (reposition) {
-          d.cLoc = _this.skew(_this.projection([valueX || 0, valueY || 0]));
-
-          view.attr("cx", d.cLoc[0])
-            .attr("cy", d.cLoc[1]);
-        }
-
-        if (duration) {
-          if (showhide) {
-            const opacity = view.style("opacity");
-            view.classed("vzb-hidden", d.hidden);
-            view.style("opacity", 0)
-              .attr("r", d.r)
-              .transition().duration(duration).ease(d3.easeExp)
-              .style("opacity", opacity);
-            
-          } else {
-            view.transition().duration(duration).ease(d3.easeLinear)
-              .attr("r", d.r);
-          }
-        } else {
-          view.interrupt()
-            .attr("r", d.r)
-            .transition();
-
-          if (showhide) view.classed("vzb-hidden", d.hidden);
-        }
-
-        _this._updateLabel(d, index, d.cLoc[0], d.cLoc[1], valueS, valueC, d.label, duration);
-      }
-    });
-  },
-
-  /*
-   * UPDATE TIME:
-   * Ideally should only update when time or data changes
-   */
-  updateTime() {
-    const _this = this;
-
-    this.time_1 = this.time == null ? this.model.time.value : this.time;
-    this.time = this.model.time.value;
-    this.duration = this.model.time.playing && (this.time - this.time_1 > 0) ? this.model.time.delayAnimations : 0;
-    this.year.setText(this.model.time.formatDate(this.time), this.duration);
-    this._updateForecastOverlay();
-
-    //possibly update the exact value in size title
-    this.updateTitleNumbers();
-  },
-
-  _updateForecastOverlay() {
-    this.forecastOverlay.classed("vzb-hidden", (this.model.time.value <= this.model.time.endBeforeForecast) || !this.model.time.endBeforeForecast || !this.model.ui.chart.showForecastOverlay);
-  },
+  }
 
   fitSizeOfTitles() {
     // reset font sizes first to make the measurement consistent
@@ -653,112 +964,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       cTitleText.style("font-size", null);
     }
 
-  },
-
-  initMap() {
-    if (!this.topology) utils.warn("bubble map afterPreload: missing country shapes " + this.topology);
-
-    // http://bl.ocks.org/mbostock/d4021aa4dccfd65edffd patterson
-    // http://bl.ocks.org/mbostock/3710566 robinson
-    // map background
-
-    //stage
-
-    this.projection = d3["geo" + utils.capitalize(this.model.ui.map.projection)]();
-
-    this.mapPath = d3.geoPath()
-      .projection(this.projection);
-
-    this.mapGraph = this.element.select(".vzb-bmc-map-graph");
-    this.mapGraph.html("");
-
-    this.mapFeature = topojson.feature(this.topology, this.topology.objects[this.model.ui.map.topology.objects.geo]);
-    const boundaries = topojson.mesh(this.topology, this.topology.objects[this.model.ui.map.topology.objects.boundaries], (a, b) => a !== b);
-
-    // project to bounding box https://bl.ocks.org/mbostock/4707858
-    this.projection
-      .scale(1)
-      .translate([0, 0]);
-
-    this.mapBounds = this.mapPath.bounds(this.mapFeature);
-
-    if (this.mapFeature.features) {
-      this.mapGraph.selectAll(".land")
-        .data(this.mapFeature.features)
-        .enter().insert("path")
-        .attr("d", this.mapPath)
-        .attr("id", d => d.properties[this.model.ui.map.topology.geoIdProperty].toLowerCase())
-        .attr("class", "land");
-    } else {
-      this.mapGraph.insert("path")
-        .datum(this.mapFeature)
-        .attr("class", "land");
-    }
-
-    this.mapGraph.insert("path")
-      .datum(boundaries)
-      .attr("class", "boundary");
-  },
-
-  profiles: {
-    small: {
-      margin: { top: 10, right: 10, left: 10, bottom: 0 },
-      infoElHeight: 16,
-      minRadiusPx: 0.5,
-      maxRadiusEm: 0.05
-    },
-    medium: {
-      margin: { top: 20, right: 20, left: 20, bottom: 30 },
-      infoElHeight: 20,
-      minRadiusPx: 1,
-      maxRadiusEm: 0.05
-    },
-    large: {
-      margin: { top: 30, right: 30, left: 30, bottom: 35 },
-      infoElHeight: 22,
-      minRadiusPx: 1,
-      maxRadiusEm: 0.05
-    }
-  },
-
-  presentationProfileChanges: {
-    medium: {
-      infoElHeight: 26
-    },
-    large: {
-      infoElHeight: 32
-    }
-  },
-
-  /**
-   * Executes everytime the container or vizabi is resized
-   * Ideally,it contains only operations related to size
-   */
-  updateSize() {
-
-    this.activeProfile = this.getActiveProfile(this.profiles, this.presentationProfileChanges);
-
-    const containerWH = this.root.getVizWidthHeight();
-    this.activeProfile.maxRadiusPx = Math.max(
-      this.activeProfile.minRadiusPx,
-      this.activeProfile.maxRadiusEm * utils.hypotenuse(containerWH.width, containerWH.height)
-    );
-
-    const margin = this.activeProfile.margin;
-
-    this.height = (parseInt(this.element.style("height"), 10) - margin.top - margin.bottom) || 0;
-    this.width = (parseInt(this.element.style("width"), 10) - margin.left - margin.right) || 0;
-
-    if (this.height <= 0 || this.width <= 0) {
-      this.height = 0;
-      this.width = 0;
-      utils.warn("Bubble map chart updateSize(): vizabi container is too little or has display:none");
-    }
-
-    this.repositionElements();
-    this.rescaleMap();
-
-  },
+  }
 
   repositionElements() {
 
@@ -766,8 +972,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     const infoElHeight = this.activeProfile.infoElHeight;
     const isRTL = this.model.locale.isRTL();
 
-    this.graph
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
 
     this.year.setConditions({
       widthRatio: 2 / 10
@@ -822,109 +1027,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
         + hTranslate + ","
         + (t.translateY - infoElHeight * 0.8) + ")");
     }
-  },
-
-  rescaleMap() {
-
-    const offset = this.model.ui.map.offset;
-    const margin = this.activeProfile.margin;
-
-    // scale to aspect ratio
-    // http://bl.ocks.org/mbostock/4707858
-    const s = this.model.ui.map.scale / Math.max((this.mapBounds[1][0] - this.mapBounds[0][0]) / this.width, (this.mapBounds[1][1] - this.mapBounds[0][1]) / this.height);
-
-    // dimensions of the map itself (regardless of cropping)
-    const mapWidth = (s * (this.mapBounds[1][0] - this.mapBounds[0][0]));
-    const mapHeight = (s * (this.mapBounds[1][1] - this.mapBounds[0][1]));
-
-    // dimensions of the viewport in which the map is shown (can be bigger or smaller than map)
-    let viewPortHeight = mapHeight * (1 + offset.top + offset.bottom);
-    let viewPortWidth = mapWidth * (1 + offset.left + offset.right);
-    const mapTopOffset = mapHeight * offset.top;
-    const mapLeftOffset = mapWidth * offset.left;
-
-    // translate projection to the middle of map
-    const t = [(mapWidth - s * (this.mapBounds[1][0] + this.mapBounds[0][0])) / 2, (mapHeight - s * (this.mapBounds[1][1] + this.mapBounds[0][1])) / 2];
-
-    this.projection
-      .scale(s)
-      .translate(t);
-
-    this.mapGraph
-      .selectAll("path").attr("d", this.mapPath);
-
-    // handle scale to fit case
-    let widthScale, heightScale;
-    if (!this.model.ui.map.preserveAspectRatio) {
-
-      // wrap viewBox around viewport so map scales to fit viewport
-      const viewBoxHeight = viewPortHeight;
-      const viewBoxWidth = viewPortWidth;
-
-      // viewport is complete area (apart from scaling)
-      viewPortHeight = this.height * this.model.ui.map.scale;
-      viewPortWidth = this.width * this.model.ui.map.scale;
-
-      this.mapSvg
-        .attr("preserveAspectRatio", "none")
-        .attr("viewBox", [0, 0, viewBoxWidth, viewBoxHeight].join(" "));
-
-      //            ratio between map, viewport and offset (for bubbles)
-      widthScale = viewPortWidth / (mapWidth || 1) / (1 + offset.left + offset.right);
-      heightScale = viewPortHeight / (mapHeight || 1) / (1 + offset.top + offset.bottom);
-
-    } else {
-
-      // no scaling needed
-      widthScale = 1;
-      heightScale = 1;
-
-    }
-
-    // internal offset against parent container (mapSvg)
-    this.mapGraph
-      .attr("transform", "translate(" + mapLeftOffset + "," + mapTopOffset + ")");
-
-    // resize and put in center
-    this.mapSvg
-      .style("transform", "translate3d(" + (margin.left + (this.width - viewPortWidth) / 2) + "px," + (margin.top + (this.height - viewPortHeight) / 2) + "px,0)")
-      .attr("width", viewPortWidth)
-      .attr("height", viewPortHeight);
-
-    // set skew function used for bubbles in chart
-    const _this = this;
-    this.skew = (function() {
-      const w = _this.width;
-      const h = _this.height;
-      //input pixel loc after projection, return pixel loc after skew;
-      return function(points) {
-        //      input       scale         translate                    translate offset
-        const x = points[0] * widthScale + ((w - viewPortWidth) / 2) + mapLeftOffset * widthScale;
-        const y = points[1] * heightScale + ((h - viewPortHeight) / 2) + mapTopOffset * heightScale;
-        return [x, y];
-      };
-    })();
-
-
-  },
-
-  updateMarkerSizeLimits() {
-    const _this = this;
-    const extent = this.model.marker.size.extent || [0, 1];
-
-    if (!this.activeProfile) return utils.warn("updateMarkerSizeLimits() is called before ready(). This can happen if events get unfrozen and getFrame() still didn't return data");
-
-    let minRadius = this.activeProfile.minRadiusPx;
-    let maxRadius = this.activeProfile.maxRadiusPx;
-
-    let minArea = utils.radiusToArea(Math.max(maxRadius * extent[0], minRadius));
-    let maxArea = utils.radiusToArea(Math.max(maxRadius * extent[1], minRadius));
-
-    let range = minArea === maxArea ? [minArea, maxArea] :
-      d3.range(minArea, maxArea, (maxArea - minArea) / this.sScale.domain().length).concat(maxArea);
-
-    this.sScale.range(range);
-  },
+  }
 
   _interact() {
     const _this = this;
@@ -960,12 +1063,12 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       }
     };
 
-  },
+  }
 
   _blinkSuperHighlighted() {
     this.entityBubbles
       .classed("vzb-super-highlighted", d => this.model.marker.isSuperHighlighted(d));
-  },
+  }
 
   highlightMarkers() {
     const _this = this;
@@ -994,7 +1097,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 //
 //      });
 
-  },
+  }
 
   _updateLabel(d, index, valueX, valueY, valueS, valueC, valueL, duration) {
     const _this = this;
@@ -1016,7 +1119,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
 
       this._labels.updateLabel(d, index, cache, valueX / this.width, valueY / this.height, valueS, valueC, labelText, valueLST, duration, showhide);
     }
-  },
+  }
 
   selectMarkers() {
     const _this = this;
@@ -1040,11 +1143,11 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     }
 
     this.nonSelectedOpacityZero = false;
-  },
+  }
 
   _getLabelText(values, labelNames, d) {
     return this.KEYS.map(key => values[labelNames[key]] ? values[labelNames[key]][d[key]] : d[key]).join(", ");    
-  },
+  }
 
   _setTooltip(d) {
     if (d) {
@@ -1068,74 +1171,9 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     } else {
       this._labels.setTooltip();
     }
-  },
-
-  preload() {
-    const _this = this;
-
-    //this component shall fetch the preload geoshape information from a file
-    const loadFromFile = function(assetName, onSuccess) {
-      _this.model.data.getAsset(assetName, function(response){
-        _this.topology = response;
-        onSuccess();
-      });
-    }
-
-    //where the path to preload geoshape can be defined either directly in config:
-    const topoPath = utils.getProp(this, ["model", "ui", "map", "topology", "path"]);
-
-    //or via an entity property in dataset:
-    const topoWhich = utils.getProp(this, ["model", "ui", "map", "topology", "which"]);
-    const topoKey = utils.getProp(this, ["model", "ui", "map", "topology", "key"]);
-
-
-    return new Promise((resolve, reject) => {
-
-      // priority 1: direct URL to the topojson file
-      if (topoPath) {
-        loadFromFile(topoPath, resolve);
-
-        // priority 2: getting URL to the topojson file via DDF request
-      } else if (topoWhich) {
-        const KEY = this.model.marker._getFirstDimension({ exceptType: "time" });
-
-        //build a query to the reader to fetch preload info
-        const query = {
-          language: this.model.locale.id,
-          from: "entities",
-          select: {
-            key: [KEY],
-            value: [topoWhich]
-          },
-          where: {
-            $and: [
-              { [KEY]: "$" + KEY }
-            ]
-          },
-          join: {
-            ["$" + KEY]: { key: KEY, where: { [KEY]: { $in: [topoKey || "world"] } } }
-          },
-        };
-
-        const dataPromise = this.model.data.load(query, { [topoWhich]: d => d });
-
-        dataPromise.then(
-          function(dataId) {
-            loadFromFile(_this.model.data.getData(dataId)[0][topoWhich], resolve);
-          },
-          err => utils.warn("Problem with Preload query: ", err, JSON.stringify(query))
-        );
-
-        // priority 3: no clues provided, go for a hardcoded filename for a world map
-      } else {
-        loadFromFile("assets/world-50m.json", resolve);
-      }
-
-    });
   }
 
 
-});
+}
 
 
-export default BubbleMapComponent;

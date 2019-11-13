@@ -1,20 +1,17 @@
 {
+  "name": "vizabi-bubblemap",
+  "version": "3.0.0",
+  "description": "Bubble map tool for Vizabi 📊",
+  "scripts": {
+    "link": "npm link ../vizabi-shared-components",
+    "start": "rollup -c",
+    "build": "cross-env NODE_ENV=production rollup -c",
+    "deploy": "tool-deploy"
+  },
   "main": "build/bubblemap.js",
   "files": [
     "build"
   ],
-  "scripts": {
-    "link": "npm link ../vizabi",
-    "build": "cross-env NODE_ENV=production webpack --progress",
-    "deploy": "tool-deploy"
-  },
-  "devDependencies": {
-    "cross-env": "^5.0.0",
-    "vizabi": "latest",
-    "vizabi-tool-bundler": "github:vizabi/vizabi-tool-bundler"
-  },
-  "name": "vizabi-bubblemap",
-  "version": "2.3.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vizabi/vizabi-bubblemap.git"
@@ -26,5 +23,10 @@
     "url": "https://github.com/vizabi/vizabi-bubblemap/issues"
   },
   "homepage": "https://github.com/vizabi/vizabi-bubblemap#readme",
-  "description": "Gapminder's bubble map data visualisation tool. See it in action on gapminder.org/tools"
+  "devDependencies": {
+    "cross-env": "^5.0.0",
+    "css.escape": "^1.5.1",
+    "vizabi-shared-components": "../vizabi-shared-components",
+    "vizabi-tool-bundler": "github:vizabi/vizabi-tool-bundler#daedead"
+  }
 }

@@ -1,13 +1,14 @@
-@import "~bourbon/app/assets/stylesheets/bourbon";
-@import "~vizabi/src/assets/styles/mixins";
-@import "~vizabi/src/assets/styles/common";
-@import "~vizabi/src/assets/styles/chart";
+@import "../node_modules/bourbon/core/_bourbon.scss";
+@import "../node_modules/vizabi-shared-components/src/styles/vizabi-old/_mixins.scss";
+@import "../node_modules/vizabi-shared-components/src/styles/vizabi-old/_common.scss";
+@import "../node_modules/vizabi-shared-components/src/styles/vizabi-old/_chart.scss";
 
 .vzb-tool {
   $vzb-bmc-year-size: 15em;
 
   .vzb-bubblemap {
     @extend %vzb-chart-wrapper;
+    position: relative;
 
     .vzb-bmc-map-background {
 
