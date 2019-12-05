@@ -192,9 +192,9 @@ export default class VizabiBubblemap extends BaseComponent {
     this.sScale = this.MDL.size.scale.d3Scale.copy();
     this.cScale = this.MDL.color.scale.d3Scale;
 
+    if (this._updateLayoutProfile()) return; //return if exists with error
 
     this.preload().then(()=>{
-      if (this._updateLayoutProfile()) return; //return if exists with error
       this.addReaction(this.updateSize);
 
       this.addReaction(this._initMap);
@@ -367,6 +367,7 @@ export default class VizabiBubblemap extends BaseComponent {
   }
 
   _rescaleMap() {
+    this.services.layout.width + this.services.layout.height;
 
     const offset = this.state.map.offset;
     const {margin} = this.profileConstants;
@@ -495,6 +496,8 @@ export default class VizabiBubblemap extends BaseComponent {
   }
 
   _drawData(duration, reposition) {
+    this.services.layout.width + this.services.layout.height;
+    
     this._processFrameData();
     this._createAndDeleteBubbles();
 
@@ -603,6 +606,8 @@ export default class VizabiBubblemap extends BaseComponent {
   }
 
   updateMarkerSizeLimits() {
+    this.services.layout.width + this.services.layout.height;
+
     const {
       minRadiusPx,
     } = this.profileConstants;

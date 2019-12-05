@@ -1,0 +1,14 @@
+
+.vzb-tool.vzb-portrait {
+  .vzb-charts {
+    display: grid;
+    grid-auto-flow: row;
+  }    
+}
+  
+.vzb-tool.vzb-landscape {
+  .vzb-charts {
+    display: grid;
+    grid-auto-flow: column;
+  }    
+}

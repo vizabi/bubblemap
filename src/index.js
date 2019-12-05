@@ -13,6 +13,7 @@ import {
 import VizabiBubblemap from "./component.js";
 
 import "./styles.scss";
+import "./styles-combo.scss";
 
 export default class BubbleMap extends BaseComponent {
 
@@ -51,8 +52,10 @@ export default class BubbleMap extends BaseComponent {
     }];
 
     config.template = `
-      <div class="vzb-bubblemap vzb-chart-1"></div>
-      <div class="vzb-bubblemap vzb-chart-2"></div>
+      <div class="vzb-charts">
+        <div class="vzb-bubblemap vzb-chart-1"></div>
+        <div class="vzb-bubblemap vzb-chart-2"></div>
+      </div>
       <div class="vzb-animationcontrols">
         <div class="vzb-timeslider"></div>
         <div class="vzb-speedslider"></div>

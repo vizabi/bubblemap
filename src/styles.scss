@@ -11,6 +11,7 @@
     position: relative;
 
     .vzb-bmc-map-background {
+      position: absolute;
 
       .stroke {
         fill: none;
@@ -44,6 +45,7 @@
 
     .vzb-bubblemap-svg {
       @extend %vzb-chart-svg;
+      position: absolute;
 
       .vzb-bmc-year {
         @include opacity(.5);
