@@ -1,1 +1,1 @@
-module.exports = require("vizabi-tool-bundler").bind(null, 'Bubblemap', 'bubblemap', __dirname);
+module.exports = require("vizabi-tool-bundler").bind(null, 'BubbleMap', 'bubblemap', __dirname);
