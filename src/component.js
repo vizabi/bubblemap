@@ -208,7 +208,7 @@ export default class VizabiBubblemap extends BaseComponent {
       //this.addReaction(this._drawFooter);
       //this.addReaction(this._getWidestLabelWidth);
 
-      this.addReaction(this.updateMarkerSizeLimits);
+      //this.addReaction(this.updateMarkerSizeLimits); // part of draw data now
       this.addReaction(this._drawData);
       this.addReaction(this._updateOpacity);
       //this.addReaction(this._resizeSvg);
@@ -500,6 +500,7 @@ export default class VizabiBubblemap extends BaseComponent {
     
     this._processFrameData();
     this._createAndDeleteBubbles();
+    this.updateMarkerSizeLimits();
 
     const _this = this;
     if (!duration) duration = this.__duration;
