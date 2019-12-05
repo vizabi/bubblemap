@@ -1,1 +1,1 @@
-module.exports = require('./rollup.external')
+module.exports = require('./rollup.external')()
