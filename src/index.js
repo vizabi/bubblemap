@@ -25,11 +25,12 @@ export default class BubbleMap extends BaseComponent {
       type: VizabiBubblemap,
       placeholder: ".vzb-chart-1",
       model: marker_origin,
-      name: "chart"
+      name: "chart1",
     },{
       type: VizabiBubblemap,
       placeholder: ".vzb-chart-2",
-      model: marker_destination
+      model: marker_destination,
+      name: "chart2"
     },{
       type: TimeSlider,
       placeholder: ".vzb-timeslider",
@@ -85,9 +86,9 @@ export default class BubbleMap extends BaseComponent {
       DESTINATION: "destination",
       ENCODING: "size",
       GEO: "geo",
-      ORIGIN_MEASURE: "emigrant_stock",
-      DESTINATION_MEASURE: "immigrant_stock",
-      GEO_MEASURE: "migration_stock"
+      ORIGIN_MEASURE: "population_left",
+      DESTINATION_MEASURE: "population_arrived",
+      GEO_MEASURE: "population_moved"
     };
 
     this.children[0]._processFrameData = () => this._processFrameData(this.children[0], this.concepts.ORIGIN);

@@ -1,4 +1,5 @@
 import { BaseComponent } from "VizabiSharedComponents";
+import { Labels } from "VizabiSharedComponents";
 import { LegacyUtils as utils} from "VizabiSharedComponents";
 import { Icons } from "VizabiSharedComponents";
 
@@ -54,6 +55,18 @@ const PROFILE_CONSTANTS_FOR_PROJECTOR = {
 export default class VizabiBubblemap extends BaseComponent {
 
   constructor(config) {
+
+    config.subcomponents = [{
+      type: Labels,
+      placeholder: ".vzb-bmc-labels",      
+      options: {
+        CSS_PREFIX: "vzb-bmc",
+        LABELS_CONTAINER_CLASS: "vzb-bmc-labels",
+        LINES_CONTAINER_CLASS: "vzb-bmc-lines",
+        SUPPRESS_HIGHLIGHT_DURING_PLAY: false
+      }
+    }];
+
     config.template = `
       <svg class="vzb-bmc-map-background vzb-export">
       <g class="vzb-bmc-map-graph"></g>
@@ -101,44 +114,6 @@ export default class VizabiBubblemap extends BaseComponent {
   }
 
   setup() {
-    this.state = {
-      showForecastOverlay: false,
-      opacityHighlightDim: 0.1,
-      opacitySelectDim: 0.3,
-      opacityRegular: 1,
-      datawarning: {
-        doubtDomain: [],
-        doubtRange: []
-      },
-      superhighlightOnMinimapHover: true,
-      labels: {
-        dragging: true,
-        enabled: true
-      },
-      map: {
-        path: null,
-        colorGeo: false,
-        preserveAspectRatio: false,
-        scale: 0.95,
-        offset: {
-          top: 0.05,
-          right: 0,
-          bottom: -0.12,
-          left: 0
-        },
-        projection: "geoAzimuthalEqualArea",
-        topology: {
-          path: null,
-          objects: {
-            geo: "land",
-            boundaries: "countries"
-          },
-          geoIdProperty: null,
-        }
-      }
-    };
-
-
     this.DOM = {
       element: this.element,
 
@@ -159,13 +134,16 @@ export default class VizabiBubblemap extends BaseComponent {
     };
 
     this.wScale = d3.scaleLinear()
-      .domain(this.state.datawarning.doubtDomain)
-      .range(this.state.datawarning.doubtRange);
+      .domain(this.ui.datawarning.doubtDomain)
+      .range(this.ui.datawarning.doubtRange);
 
     this.isMobile = utils.isMobileOrTablet();
     
     
     d3GeoProjection();
+    
+    this._labels = this.findChild({type: "Labels"});
+
 
     // this._labels = new Labels(this);
     // this._labels.config({
@@ -240,7 +218,7 @@ export default class VizabiBubblemap extends BaseComponent {
   _drawForecastOverlay() {
     this.DOM.forecastOverlay.classed("vzb-hidden", 
       !this.MDL.frame.endBeforeForecast || 
-      !this.state.showForecastOverlay || 
+      !this.ui.showForecastOverlay || 
       (this.MDL.frame.value <= this.MDL.frame.endBeforeForecast)
     );
   }
@@ -263,64 +241,21 @@ export default class VizabiBubblemap extends BaseComponent {
 
     const reader = this.model.data.source.reader;
 
-    //this component shall fetch the preload geoshape information from a file
-    const loadFromFile = function(assetName, onSuccess) {
-      reader.getAsset(assetName).then(function(response){
-        _this.topology = response;
-        onSuccess();
-      });
-    };
-
     //where the path to preload geoshape can be defined either directly in config:
-    const topoPath = utils.getProp(this, ["state", "map", "topology", "path"]);
+    const topoPath = utils.getProp(this, ["ui", "map", "topology", "path"]);
 
-    //or via an entity property in dataset:
-    const topoWhich = utils.getProp(this, ["state", "map", "topology", "which"]);
-    const topoKey = utils.getProp(this, ["state", "map", "topology", "key"]);
-
+    //or via an entity property in dataset, but this functionality was never needed, so i removed the implementation
+    //const topoWhich = utils.getProp(this, ["ui", "map", "topology", "which"]);
+    //const topoKey = utils.getProp(this, ["ui", "map", "topology", "key"]);
 
     return new Promise((resolve, reject) => {
-
-      // priority 1: direct URL to the topojson file
       if (topoPath) {
-        loadFromFile(topoPath, resolve);
-
-        // priority 2: getting URL to the topojson file via DDF request
-      } else if (topoWhich) {
-        const KEY = this.model.marker._getFirstDimension({ exceptType: "time" });
-
-        //build a query to the reader to fetch preload info
-        const query = {
-          language: this.model.locale.id,
-          from: "entities",
-          select: {
-            key: [KEY],
-            value: [topoWhich]
-          },
-          where: {
-            $and: [
-              { [KEY]: "$" + KEY }
-            ]
-          },
-          join: {
-            ["$" + KEY]: { key: KEY, where: { [KEY]: { $in: [topoKey || "world"] } } }
-          },
-        };
-
-        const dataPromise = this.model.data.load(query, { [topoWhich]: d => d });
-
-        dataPromise.then(
-          function(dataId) {
-            loadFromFile(_this.model.data.getData(dataId)[0][topoWhich], resolve);
-          },
-          err => utils.warn("Problem with Preload query: ", err, JSON.stringify(query))
-        );
-
-        // priority 3: no clues provided, go for a hardcoded filename for a world map
+        reader.getAsset(topoPath).then(function(response){
+          _this.topology = response;
+          resolve();
+        });
       } else {
-        loadFromFile("assets/world-50m.json", resolve);
       }
-
     });
   }
 
@@ -331,10 +266,10 @@ export default class VizabiBubblemap extends BaseComponent {
     // http://bl.ocks.org/mbostock/3710566 robinson
     // map background
 
-    if(!d3[this.state.map.projection]) return utils.warn(`Projection ${this.state.map.projection} is not available in d3`);
+    if(!d3[this.ui.map.projection]) return utils.warn(`Projection ${this.ui.map.projection} is not available in d3`);
 
     // project to bounding box https://bl.ocks.org/mbostock/4707858
-    this.projection = d3[this.state.map.projection]()
+    this.projection = d3[this.ui.map.projection]()
       .scale(1)
       .translate([0, 0]);
 
@@ -343,8 +278,8 @@ export default class VizabiBubblemap extends BaseComponent {
 
     this.DOM.mapGraph.html("");
 
-    this.mapFeature = topojson.feature(this.topology, this.topology.objects[this.state.map.topology.objects.geo]);
-    const boundaries = topojson.mesh(this.topology, this.topology.objects[this.state.map.topology.objects.boundaries], (a, b) => a !== b);
+    this.mapFeature = topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.geo]);
+    const boundaries = topojson.mesh(this.topology, this.topology.objects[this.ui.map.topology.objects.boundaries], (a, b) => a !== b);
 
     this.mapBounds = this.mapPath.bounds(this.mapFeature);
 
@@ -353,7 +288,7 @@ export default class VizabiBubblemap extends BaseComponent {
         .data(this.mapFeature.features)
         .enter().insert("path")
         .attr("d", this.mapPath)
-        .attr("id", d => d.properties[this.state.map.topology.geoIdProperty].toLowerCase())
+        .attr("id", d => d.properties[this.ui.map.topology.geoIdProperty].toLowerCase())
         .attr("class", "land");
     } else {
       this.DOM.mapGraph.insert("path")
@@ -369,12 +304,12 @@ export default class VizabiBubblemap extends BaseComponent {
   _rescaleMap() {
     this.services.layout.width + this.services.layout.height;
 
-    const offset = this.state.map.offset;
+    const offset = this.ui.map.offset;
     const {margin} = this.profileConstants;
 
     // scale to aspect ratio
     // http://bl.ocks.org/mbostock/4707858
-    const s = this.state.map.scale / Math.max((this.mapBounds[1][0] - this.mapBounds[0][0]) / this.width, (this.mapBounds[1][1] - this.mapBounds[0][1]) / this.height);
+    const s = this.ui.map.scale / Math.max((this.mapBounds[1][0] - this.mapBounds[0][0]) / this.width, (this.mapBounds[1][1] - this.mapBounds[0][1]) / this.height);
 
     // dimensions of the map itself (regardless of cropping)
     const mapWidth = (s * (this.mapBounds[1][0] - this.mapBounds[0][0]));
@@ -398,15 +333,15 @@ export default class VizabiBubblemap extends BaseComponent {
 
     // handle scale to fit case
     let widthScale, heightScale;
-    if (!this.state.map.preserveAspectRatio) {
+    if (!this.ui.map.preserveAspectRatio) {
 
       // wrap viewBox around viewport so map scales to fit viewport
       const viewBoxHeight = viewPortHeight;
       const viewBoxWidth = viewPortWidth;
 
       // viewport is complete area (apart from scaling)
-      viewPortHeight = this.height * this.state.map.scale;
-      viewPortWidth = this.width * this.state.map.scale;
+      viewPortHeight = this.height * this.ui.map.scale;
+      viewPortWidth = this.width * this.ui.map.scale;
 
       this.DOM.mapSvg
         .attr("preserveAspectRatio", "none")
@@ -483,15 +418,71 @@ export default class VizabiBubblemap extends BaseComponent {
 
     if(!utils.isTouchDevice()){
       this.bubbles
-        .on("mouseover", (d) => this.MDL.highlighted.set(d))
-        .on("mouseout", (d) => this.MDL.highlighted.delete(d))
-        .on("click", (d) => this.MDL.selected.toggle(d));
+        .on("mouseover", this._interact().mouseover)
+        .on("mouseout", this._interact().mouseout)
+        .on("click", this._interact().click);
     } else {
       this.bubbles
-        .on("tap", (d) => {
-          this.MDL.selected.toggle(d);
-          d3.event.stopPropagation();
-        });
+        .on("tap", this._interact().tap);
+    }
+  }
+
+  _interact() {
+    const _this = this;
+
+    return {
+      mouseover(d) {
+        if (_this.MDL.frame.dragging) return;
+
+        _this.hovered = d;
+        _this.MDL.highlighted.set(d);
+        //put the exact value in the size title
+        //this.updateTitleNumbers();
+        //_this.fitSizeOfTitles();
+       
+        // if selected, clear hover tooltip
+        _this._setTooltip(_this.MDL.selected.has(d) ? null : d);
+      },
+      mouseout(d) {
+        if (_this.MDL.frame.dragging) return;
+
+        _this.hovered = null;
+        _this.MDL.highlighted.delete(d);
+        //_this.updateTitleNumbers();
+        //_this.fitSizeOfTitles();
+
+        //clear tooltip
+        _this._setTooltip();
+      },
+      click(d) {
+        _this.MDL.selected.toggle(d);
+      },
+      tap(d) {
+        _this.MDL.selected.toggle(d);
+        d3.event.stopPropagation();
+      }
+    };
+  }
+
+  _setTooltip(d) {
+    if (d) {
+      const labelValues = {};
+      const tooltipCache = {};
+      const mouse = d3.mouse(this.DOM.graph.node()).map(d => parseInt(d));
+      const x = d.cLoc[0] || mouse[0];
+      const y = d.cLoc[1] || mouse[1];
+      const offset = d.r || 0;
+
+      labelValues.valueS = d.size;
+      labelValues.labelText = d.label;
+      tooltipCache.labelX0 = labelValues.valueX = x / this.width;
+      tooltipCache.labelY0 = labelValues.valueY = y / this.height;
+      tooltipCache.scaledS0 = offset;
+      tooltipCache.scaledC0 = null;
+
+      this._labels.setTooltip(d, labelValues.labelText, tooltipCache, labelValues);
+    } else {
+      this._labels.setTooltip();
     }
   }
 
@@ -509,7 +500,6 @@ export default class VizabiBubblemap extends BaseComponent {
 
     this.bubbles.each(function(d) {
       const view = d3.select(this);
-      const geo = d3.select("#" + d[_this.KEY]);
 
       const valueX = d.lon;
       const valueY = d.lat;
@@ -524,7 +514,7 @@ export default class VizabiBubblemap extends BaseComponent {
       d.cLoc = _this.skew(_this.projection([valueX || 0, valueY || 0]));
       view
         .attr("r", d.r)
-        .attr("fill", valueC != null ? _this.cScale(valueC) : _this.COLOR_WHITEISH)
+        .attr("fill", valueC != null ? _this.cScale(valueC) : COLOR_WHITEISH)
         .attr("cx", d.cLoc[0])
         .attr("cy", d.cLoc[1]); 
 
@@ -538,7 +528,7 @@ export default class VizabiBubblemap extends BaseComponent {
       //     if (duration) {
       //       view.transition().duration(duration).ease(d3.easeLinear)
       //         .style("opacity", 0)
-      //         .on("end", () => view.classed("vzb-hidden", d.hidden).style("opacity", _this.state.opacityRegular));
+      //         .on("end", () => view.classed("vzb-hidden", d.hidden).style("opacity", _this.ui.opacityRegular));
       //     } else {
       //       view.classed("vzb-hidden", d.hidden);
       //     }
@@ -550,7 +540,7 @@ export default class VizabiBubblemap extends BaseComponent {
 
       //   view.attr("fill", valueC != null ? _this.cScale(valueC) : _this.COLOR_WHITEISH);
 
-      //   if (_this.state.map.colorGeo)
+      //   if (_this.ui.map.colorGeo)
       //     geo.style("fill", valueC != null ? _this.cScale(valueC) : "#999");
 
       //   if (reposition) {
@@ -588,13 +578,12 @@ export default class VizabiBubblemap extends BaseComponent {
   }
 
   updateSize() {
+    this.services.layout.width + this.services.layout.height;
+
     const {
-      margin,
       minRadiusPx,
       maxRadiusEm
     } = this.profileConstants;
-
-   
 
     this.maxRadiusPx = Math.max(
       minRadiusPx,
@@ -603,7 +592,6 @@ export default class VizabiBubblemap extends BaseComponent {
 
     //this.repositionElements();
     //this.rescaleMap();
-
   }
 
   updateMarkerSizeLimits() {
@@ -676,59 +664,90 @@ export default class VizabiBubblemap extends BaseComponent {
 }
 
 
-    // this.model_binds = {
-    //   "change:time.value": function(evt) {
-    //     if (!_this._readyOnce) return;
-    //     _this.model.marker.getFrame(_this.model.time.value, _this.frameChanged.bind(_this));
-    //   },
-    //   "change:marker.highlight": function(evt) {
-    //     if (!_this._readyOnce) return;
-    //     _this.highlightMarkers();
-    //     _this.updateOpacity();
-    //   },
-    //   "change:marker": function(evt, path) {
-    //     // bubble size change is processed separately
-    //     if (!_this._readyOnce) return;
+VizabiBubblemap.DEFAULT_UI = {
+  showForecastOverlay: false,
+  opacityHighlightDim: 0.1,
+  opacitySelectDim: 0.3,
+  opacityRegular: 1,
+  datawarning: {
+    doubtDomain: [],
+    doubtRange: []
+  },
+  superhighlightOnMinimapHover: true,
+  map: {
+    path: null,
+    colorGeo: false,
+    preserveAspectRatio: false,
+    scale: 0.95,
+    offset: {
+      top: 0.05,
+      right: 0,
+      bottom: -0.12,
+      left: 0
+    },
+    projection: "geoAzimuthalEqualArea",
+    topology: {
+      path: "assets/world-50m.json",
+      objects: {
+        geo: "land",
+        boundaries: "countries"
+      },
+      geoIdProperty: null,
+    }
+  }
+};
 
-    //     if (path.indexOf("scaleType") > -1) {
-    //       _this.ready();
-    //     }
-    //   },
-    //   "change:ui.chart.showForecastOverlay": function(evt) {
-    //     if (!_this._readyOnce) return;
-    //     _this._updateForecastOverlay();
-    //   },
-    //   "change:marker.size.extent": function(evt, path) {
-    //     //console.log("EVENT change:marker:size:max");
-    //     if (!_this._readyOnce || !_this.entityBubbles) return;
-    //     _this.updateMarkerSizeLimits();
-    //     _this.redrawDataPoints(null, false);
-    //   },
-    //   "change:marker.color.palette": function(evt, path) {
-    //     if (!_this._readyOnce) return;
-    //     _this.redrawDataPoints(null, false);
-    //   },
-    //   "change:marker.select": function(evt) {
-    //     if (!_this._readyOnce) return;
-    //     _this.selectMarkers();
-    //     _this.redrawDataPoints(null, false);
-    //     _this.updateOpacity();
-    //     _this.updateDoubtOpacity();
+// this.model_binds = {
+//   "change:time.value": function(evt) {
+//     if (!_this._readyOnce) return;
+//     _this.model.marker.getFrame(_this.model.time.value, _this.frameChanged.bind(_this));
+//   },
+//   "change:marker.highlight": function(evt) {
+//     if (!_this._readyOnce) return;
+//     _this.highlightMarkers();
+//     _this.updateOpacity();
+//   },
+//   "change:marker": function(evt, path) {
+//     // bubble size change is processed separately
+//     if (!_this._readyOnce) return;
+//     if (path.indexOf("scaleType") > -1) {
+//       _this.ready();
+//     }
+//   },
+//   "change:ui.chart.showForecastOverlay": function(evt) {
+//     if (!_this._readyOnce) return;
+//     _this._updateForecastOverlay();
+//   },
+//   "change:marker.size.extent": function(evt, path) {
+//     //console.log("EVENT change:marker:size:max");
+//     if (!_this._readyOnce || !_this.entityBubbles) return;
+//     _this.updateMarkerSizeLimits();
+//     _this.redrawDataPoints(null, false);
+//   },
+//   "change:marker.color.palette": function(evt, path) {
+//     if (!_this._readyOnce) return;
+//     _this.redrawDataPoints(null, false);
+//   },
+//   "change:marker.select": function(evt) {
+//     if (!_this._readyOnce) return;
+//     _this.selectMarkers();
+//     _this.redrawDataPoints(null, false);
+//     _this.updateOpacity();
+//     _this.updateDoubtOpacity();
+//   },
+//   "change:marker.opacitySelectDim": function(evt) {
+//     _this.updateOpacity();
+//   },
+//   "change:marker.opacityRegular": function(evt) {
+//     _this.updateOpacity();
+//   },
+//   "change:marker.superHighlight": () => this._readyOnce && this._blinkSuperHighlighted(),
+// };
 
-    //   },
-    //   "change:marker.opacitySelectDim": function(evt) {
-    //     _this.updateOpacity();
-    //   },
-    //   "change:marker.opacityRegular": function(evt) {
-    //     _this.updateOpacity();
-    //   },
-    //   "change:marker.superHighlight": () => this._readyOnce && this._blinkSuperHighlighted(),
-    // };
-
-    //this._selectlist = new Selectlist(this);
+//this._selectlist = new Selectlist(this);
 
 
-   class Old {
+class Old {
 
   readyOnce() {
 
@@ -796,7 +815,7 @@ export default class VizabiBubblemap extends BaseComponent {
       _this.redrawDataPoints();
       _this.highlightMarkers();
       _this.selectMarkers();
-//    this._selectlist.redraw();
+      //this._selectlist.redraw();
       _this.updateDoubtOpacity();
       _this.updateOpacity();
     });
@@ -841,7 +860,7 @@ export default class VizabiBubblemap extends BaseComponent {
           .toggle();
       });
 
-    utils.setIcon(this.dataWarningEl, iconWarn).select("svg").attr("width", "0px").attr("height", "0px");
+    utils.setIcon(this.dataWarningEl, ICON_WARN).select("svg").attr("width", "0px").attr("height", "0px");
     this.dataWarningEl.append("text")
       .attr("text-anchor", "end")
       .text(this.translator("hints/dataWarning"));
@@ -858,9 +877,9 @@ export default class VizabiBubblemap extends BaseComponent {
       });
 
     this.yInfoEl
-      .html(iconQuestion)
+      .html(ICON_QUESTION)
       .select("svg").attr("width", "0px").attr("height", "0px")
-      .style('opacity', Number(Boolean(conceptPropsS.description || conceptPropsS.sourceLink)));
+      .style("opacity", Number(Boolean(conceptPropsS.description || conceptPropsS.sourceLink)));
 
     //TODO: move away from UI strings, maybe to ready or ready once
     this.yInfoEl.on("click", () => {
@@ -878,9 +897,9 @@ export default class VizabiBubblemap extends BaseComponent {
     });
 
     this.cInfoEl
-      .html(iconQuestion)
+      .html(ICON_QUESTION)
       .select("svg").attr("width", "0px").attr("height", "0px")
-      .style('opacity', Number(Boolean(conceptPropsC.description || conceptPropsC.sourceLink)));
+      .style("opacity", Number(Boolean(conceptPropsC.description || conceptPropsC.sourceLink)));
 
     //TODO: move away from UI strings, maybe to ready or ready once
     this.cInfoEl.on("click", () => {
@@ -1035,41 +1054,7 @@ export default class VizabiBubblemap extends BaseComponent {
     }
   }
 
-  _interact() {
-    const _this = this;
 
-    return {
-      _mouseover(d, i) {
-        if (_this.model.time.dragging) return;
-
-        _this.model.marker.highlightMarker(d);
-
-        _this.hovered = d;
-        //put the exact value in the size title
-        _this.updateTitleNumbers();
-        _this.fitSizeOfTitles();
-
-        if (_this.model.marker.isSelected(d)) { // if selected, not show hover tooltip
-          _this._setTooltip();
-        } else {
-          //position tooltip
-          _this._setTooltip(d);
-        }
-      },
-      _mouseout(d, i) {
-        if (_this.model.time.dragging) return;
-        _this._setTooltip();
-        _this.hovered = null;
-        _this.updateTitleNumbers();
-        _this.fitSizeOfTitles();
-        _this.model.marker.clearHighlighted();
-      },
-      _click(d, i) {
-        _this.model.marker.selectMarker(d);
-      }
-    };
-
-  }
 
   _blinkSuperHighlighted() {
     this.entityBubbles
@@ -1091,17 +1076,17 @@ export default class VizabiBubblemap extends BaseComponent {
     }
 
 
-//      if (!this.selectList || !this.someSelected) return;
-//      this.selectList.classed("vzb-highlight", function (d) {
-//          return _this.model.entities.isHighlighted(d);
-//      });
-//      this.selectList.each(function (d, i) {
-//        d3.select(this).selectAll(".vzb-bmc-label-x")
-//          .classed("vzb-invisible", function(n) {
-//            return !_this.model.entities.isHighlighted(d);
-//          });
-//
-//      });
+    //      if (!this.selectList || !this.someSelected) return;
+    //      this.selectList.classed("vzb-highlight", function (d) {
+    //          return _this.model.entities.isHighlighted(d);
+    //      });
+    //      this.selectList.each(function (d, i) {
+    //        d3.select(this).selectAll(".vzb-bmc-label-x")
+    //          .classed("vzb-invisible", function(n) {
+    //            return !_this.model.entities.isHighlighted(d);
+    //          });
+    //
+    //      });
 
   }
 
@@ -1129,10 +1114,9 @@ export default class VizabiBubblemap extends BaseComponent {
 
   selectMarkers() {
     const _this = this;
-    const KEY = this.KEY;
     this.someSelected = (this.model.marker.select.length > 0);
 
-//      this._selectlist.rebuild();
+    //this._selectlist.rebuild();
     if (utils.isTouchDevice()) {
       _this._labels.showCloseCross(null, false);
       if (_this.someHighlighted) {
@@ -1151,33 +1135,9 @@ export default class VizabiBubblemap extends BaseComponent {
     this.nonSelectedOpacityZero = false;
   }
 
-  _getLabelText(values, labelNames, d) {
-    return this.KEYS.map(key => values[labelNames[key]] ? values[labelNames[key]][d[key]] : d[key]).join(", ");    
-  }
 
-  _setTooltip(d) {
-    if (d) {
-      const KEY = this.KEY;
-      const values = this.values;
-      const labelValues = {};
-      const tooltipCache = {};
-      const mouse = d3.mouse(this.graph.node()).map(d => parseInt(d));
-      const x = d.cLoc[0] || mouse[0];
-      const y = d.cLoc[1] || mouse[1];
-      const offset = d.r || 0;
 
-      labelValues.valueS = values.size[utils.getKey(d, this.dataKeys.size)];
-      labelValues.labelText = this._getLabelText(values, this.labelNames, d);
-      tooltipCache.labelX0 = labelValues.valueX = x / this.width;
-      tooltipCache.labelY0 = labelValues.valueY = y / this.height;
-      tooltipCache.scaledS0 = offset;
-      tooltipCache.scaledC0 = null;
 
-      this._labels.setTooltip(d, labelValues.labelText, tooltipCache, labelValues);
-    } else {
-      this._labels.setTooltip();
-    }
-  }
 
 
 }

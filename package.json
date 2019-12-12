@@ -25,7 +25,6 @@
   "homepage": "https://github.com/vizabi/vizabi-bubblemap#readme",
   "devDependencies": {
     "cross-env": "^5.0.0",
-    "css.escape": "^1.5.1",
     "vizabi-shared-components": "../vizabi-shared-components",
     "vizabi-tool-bundler": "github:vizabi/vizabi-tool-bundler#switch_to_rollup"
   }
