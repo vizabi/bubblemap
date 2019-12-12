@@ -119,16 +119,14 @@ export default class BubbleMap extends BaseComponent {
 
     if (_this.model.data.config.space.includes(GEO)){
       rollup = _this.model.dataArray.map((m) =>
-        Object.assign({}, m, {
-          [Symbol.for("key")]: m[GEO]
-        })
+        Object.assign({}, m)
       );
     } else {   
       rollup = d3.nest()
         .key(d => d[DIRECTION])
         .rollup(v => 
           Object.assign({}, v[0], {
-            [Symbol.for("key")]: v[0][DIRECTION],
+            [Symbol.for("key")]: GEO + "-" + v[0][DIRECTION],
             [ENCODING]: d3.sum(v, d => d[ENCODING])
           })
         )
@@ -176,8 +174,8 @@ export default class BubbleMap extends BaseComponent {
     const receiver = initiator == DESTINATION ? ORIGIN : DESTINATION; 
     const measure = initiator == DESTINATION ? ORIGIN_MEASURE : DESTINATION_MEASURE;
     
-    const selection = initiator_model.encoding.get("selected").data.filter.markers.keys().next().value;
-    const newFilter = selection ? {[initiator]: {[initiator]: {"$in": [selection]}}} : {};
+    let selection = initiator_model.encoding.get("selected").data.filter.markers.keys().next().value;
+    const newFilter = selection ? {[initiator]: {[initiator]: {"$in": [selection.replace(GEO + "-", "")]}}} : {};
     const currentFilter = Vizabi.mobx.toJS(receiver_model.data.filter.config.dimensions);
 
     if (JSON.stringify(currentFilter) !== JSON.stringify(newFilter)) {

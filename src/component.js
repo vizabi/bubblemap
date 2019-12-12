@@ -10,18 +10,6 @@ const {ICON_WARN, ICON_QUESTION} = Icons;
 const COLOR_BLACKISH = "rgb(51, 51, 51)";
 const COLOR_WHITEISH = "rgb(253, 253, 253)";
 
-// const {
-//   helpers: {
-//     labels: Labels,
-//     topojson,
-//     "d3.geoProjection": d3GeoProjection,
-//     "d3.dynamicBackground": DynamicBackground,
-//   },
-//   iconset: {
-//     warn: iconWarn,
-//     question: iconQuestion,
-//   },
-// } = Vizabi;
 const PROFILE_CONSTANTS = {
   SMALL: {
     margin: { top: 10, right: 10, left: 10, bottom: 0 },
@@ -143,15 +131,6 @@ export default class VizabiBubblemap extends BaseComponent {
     d3GeoProjection();
     
     this._labels = this.findChild({type: "Labels"});
-
-
-    // this._labels = new Labels(this);
-    // this._labels.config({
-    //   CSS_PREFIX: "vzb-bmc",
-    //   LABELS_CONTAINER_CLASS: "vzb-bmc-labels",
-    //   LINES_CONTAINER_CLASS: "vzb-bmc-lines",
-    //   SUPPRESS_HIGHLIGHT_DURING_PLAY: false
-    // });
   }
 
 
@@ -440,8 +419,8 @@ export default class VizabiBubblemap extends BaseComponent {
         //this.updateTitleNumbers();
         //_this.fitSizeOfTitles();
        
-        // if selected, clear hover tooltip
-        _this._setTooltip(_this.MDL.selected.has(d) ? null : d);
+        // if not selected, show tooltip
+        if (!_this.MDL.selected.has(d)) _this._setTooltip(d);
       },
       mouseout(d) {
         if (_this.MDL.frame.dragging) return;
@@ -498,7 +477,7 @@ export default class VizabiBubblemap extends BaseComponent {
     if (!reposition) reposition = true;
     if (!this.bubbles) return utils.warn("redrawDataPoints(): no entityBubbles defined. likely a premature call, fix it!");
 
-    this.bubbles.each(function(d) {
+    this.bubbles.each(function(d, index) {
       const view = d3.select(this);
 
       const valueX = d.lon;
@@ -518,6 +497,8 @@ export default class VizabiBubblemap extends BaseComponent {
         .attr("cx", d.cLoc[0])
         .attr("cy", d.cLoc[1]); 
 
+      _this._updateLabel(d, duration);
+
       // d.hidden_1 = d.hidden;
       // d.hidden = (!valueS && valueS !== 0) || valueX == null || valueY == null;
       // if(d.hidden) nulls++;
@@ -533,7 +514,7 @@ export default class VizabiBubblemap extends BaseComponent {
       //       view.classed("vzb-hidden", d.hidden);
       //     }
       //   }
-      //   //_this._updateLabel(d, index, 0, 0, valueS, valueC, valueL, duration);
+      //   //_this._updateLabel(d, duration);
       // } else {
 
       //   d.r = utils.areaToRadius(_this.sScale(valueS || 0));
@@ -571,10 +552,30 @@ export default class VizabiBubblemap extends BaseComponent {
       //     if (showhide) view.classed("vzb-hidden", d.hidden);
       //   }
 
-      //   //_this._updateLabel(d, index, d.cLoc[0], d.cLoc[1], valueS, valueC, d.label, duration);
+      //   //_this._updateLabel(d, duration);
       // }
     });
 
+  }
+
+
+  _updateLabel(d, duration) {
+    if (duration == null) duration = this.duration;
+
+    // only for selected entities
+    if (this.MDL.selected.has(d)) {
+
+      const showhide = d.hidden !== d.hidden_1;
+      const valueLST = null;
+      const cache = {
+        labelX0: d.cLoc[0] / this.width,
+        labelY0: d.cLoc[1] / this.height,
+        scaledS0: d.size ? utils.areaToRadius(this.sScale(d.size)) : null,
+        scaledC0: d.color != null ? this.cScale(d.color) : this.COLOR_WHITEISH
+      };
+
+      this._labels.updateLabel(d, cache, d.cLoc[0] / this.width, d.cLoc[1] / this.height, d.size, d.color, d.label, valueLST, duration, showhide);
+    }
   }
 
   updateSize() {
@@ -616,6 +617,27 @@ export default class VizabiBubblemap extends BaseComponent {
   }
 
 
+  // selectMarkers() {
+  //   const someHighlighted = this.MDL.highlighted.markers.size > 0;
+  //   const someSelected = this.MDL.selected.markers.size > 0;
+
+  //   if (utils.isTouchDevice()) {
+  //     this._labels.showCloseCross(null, false);
+  //     if (someHighlighted) {
+  //       this.model.marker.clearHighlighted();
+  //     } else {
+  //       this.updateTitleNumbers();
+  //       this.fitSizeOfTitles();
+  //     }
+  //   } else {
+  //     // hide recent hover tooltip
+  //     if (!this.hovered || this.model.marker.isSelected(this.hovered)) {
+  //       this._setTooltip();
+  //     }
+  //   }
+
+  // }
+
   _updateOpacity() {
     const _this = this;
 
@@ -623,7 +645,7 @@ export default class VizabiBubblemap extends BaseComponent {
       opacityHighlightDim,
       opacitySelectDim,
       opacityRegular,
-    } = this.state;
+    } = this.ui;
 
     const someHighlighted = this.MDL.highlighted.markers.size > 0;
     const someSelected = this.MDL.selected.markers.size > 0;
@@ -1089,54 +1111,6 @@ class Old {
     //      });
 
   }
-
-  _updateLabel(d, index, valueX, valueY, valueS, valueC, valueL, duration) {
-    const _this = this;
-    const KEY = this.KEY;
-    if (d[KEY] == _this.druging) return;
-    if (duration == null) duration = _this.duration;
-
-    // only for selected entities
-    if (_this.model.marker.isSelected(d)) {
-
-      const showhide = d.hidden !== d.hidden_1;
-      const valueLST = null;
-      const cache = {};
-      cache.labelX0 = valueX / this.width;
-      cache.labelY0 = valueY / this.height;
-      cache.scaledS0 = valueS ? utils.areaToRadius(_this.sScale(valueS)) : null;
-      cache.scaledC0 = valueC != null ? _this.cScale(valueC) : _this.COLOR_WHITEISH;
-      const labelText = this._getLabelText(this.values, this.labelNames, d);
-
-      this._labels.updateLabel(d, index, cache, valueX / this.width, valueY / this.height, valueS, valueC, labelText, valueLST, duration, showhide);
-    }
-  }
-
-  selectMarkers() {
-    const _this = this;
-    this.someSelected = (this.model.marker.select.length > 0);
-
-    //this._selectlist.rebuild();
-    if (utils.isTouchDevice()) {
-      _this._labels.showCloseCross(null, false);
-      if (_this.someHighlighted) {
-        _this.model.marker.clearHighlighted();
-      } else {
-        _this.updateTitleNumbers();
-        _this.fitSizeOfTitles();
-      }
-    } else {
-      // hide recent hover tooltip
-      if (!_this.hovered || _this.model.marker.isSelected(_this.hovered)) {
-        _this._setTooltip();
-      }
-    }
-
-    this.nonSelectedOpacityZero = false;
-  }
-
-
-
 
 
 
