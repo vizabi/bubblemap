@@ -11,10 +11,10 @@
   "devDependencies": {
     "cross-env": "^5.0.0",
     "vizabi": "latest",
-    "vizabi-tool-bundler": "github:vizabi/vizabi-tool-bundler"
+    "vizabi-tool-bundler": "github:vizabi/vizabi-tool-bundler#still-webpack"
   },
   "name": "vizabi-bubblemap",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vizabi/vizabi-bubblemap.git"

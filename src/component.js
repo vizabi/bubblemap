@@ -153,7 +153,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     // year background
     this.yearEl = this.graph.select(".vzb-bmc-year");
     this.year = new DynamicBackground(this.yearEl);
-    this.year.setConditions({ xAlign: "left", yAlign: "bottom" });
+    this.year.setConditions({ xAlign: "center", yAlign: "bottom" });
 
     const _this = this;
     this.on("resize", () => {
@@ -617,7 +617,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
     this.time_1 = this.time == null ? this.model.time.value : this.time;
     this.time = this.model.time.value;
     this.duration = this.model.time.playing && (this.time - this.time_1 > 0) ? this.model.time.delayAnimations : 0;
-    this.year.setText(this.model.time.formatDate(this.time), this.duration);
+    this.year.setText(this.model.time.formatDate(this.time, "ui"), this.duration);
     this._updateForecastOverlay();
 
     //possibly update the exact value in size title
@@ -770,7 +770,7 @@ const BubbleMapComponent = Component.extend("bubblemap", {
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     this.year.setConditions({
-      widthRatio: 2 / 10
+      widthRatio: 3 / 10
     });
     this.year.resize(this.width, this.height);
 
