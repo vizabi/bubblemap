@@ -149,7 +149,7 @@
         opacity: .8;
       }
 
-      .vzb-bmc-axis-y-title {
+      .vzb-bmc-axis-s-title {
         @extend %vzb-chart-axis-title;
         @include rtl {
           text {
@@ -192,7 +192,7 @@
   }
   &.vzb-large {
     .vzb-bubblemap {
-      .vzb-bmc-axis-y-title,
+      .vzb-bmc-axis-s-title,
       .vzb-bmc-axis-c-title {
         @extend %vzb-chart-axis-title-large;
       }
@@ -211,7 +211,7 @@
   }
   &.vzb-medium {
     .vzb-bubblemap {
-      .vzb-bmc-axis-y-title,
+      .vzb-bmc-axis-s-title,
       .vzb-bmc-axis-c-title {
         @extend %vzb-chart-axis-title-medium;
       }
@@ -230,7 +230,7 @@
   }
   &.vzb-small {
     .vzb-bubblemap {
-      .vzb-bmc-axis-y-title,
+      .vzb-bmc-axis-s-title,
       .vzb-bmc-axis-c-title {
         @extend %vzb-chart-axis-title-small;
       }
@@ -249,7 +249,7 @@
   }
   &.vzb-presentation {
     .vzb-bubblemap {
-      .vzb-bmc-axis-y-title,
+      .vzb-bmc-axis-s-title,
       .vzb-bmc-axis-c-title,
       .vzb-bmc-axis-info {
         font-size: $vzb-font-size-largest;
@@ -267,7 +267,7 @@
     }
 
     &.vzb-small {
-      .vzb-bmc-axis-y-title,
+      .vzb-bmc-axis-s-title,
       .vzb-bmc-axis-c-title {
         font-size: $vzb-font-size-medium;
       }

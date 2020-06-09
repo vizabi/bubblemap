@@ -13,19 +13,25 @@ const COLOR_WHITEISH = "rgb(253, 253, 253)";
 const PROFILE_CONSTANTS = {
   SMALL: {
     margin: { top: 10, right: 10, left: 10, bottom: 0 },
+    headerMargin: {top: 10, right: 20, bottom: 20, left: 10},
     infoElHeight: 16,
+    infoElMargin: 5,
     minRadiusPx: 0.5,
     maxRadiusEm: 0.05
   },
   MEDIUM: {
     margin: { top: 20, right: 20, left: 20, bottom: 30 },
+    headerMargin: {top: 10, right: 20, bottom: 20, left: 15},
     infoElHeight: 20,
+    infoElMargin: 5,
     minRadiusPx: 1,
     maxRadiusEm: 0.05
   },
   LARGE: {
     margin: { top: 30, right: 30, left: 30, bottom: 35 },
+    headerMargin: {top: 10, right: 20, bottom: 20, left: 20},
     infoElHeight: 22,
+    infoElMargin: 5,
     minRadiusPx: 1,
     maxRadiusEm: 0.05
   }
@@ -33,10 +39,12 @@ const PROFILE_CONSTANTS = {
 
 const PROFILE_CONSTANTS_FOR_PROJECTOR = {
   MEDIUM: {
-    infoElHeight: 26
+    infoElHeight: 26,
+    infoElMargin: 10,
   },
   LARGE: {
-    infoElHeight: 32
+    infoElHeight: 32,
+    infoElMargin: 10,
   }
 };
 
@@ -57,39 +65,34 @@ export default class VizabiBubblemap extends BaseComponent {
 
     config.template = `
       <svg class="vzb-bmc-map-background vzb-export">
-      <g class="vzb-bmc-map-graph"></g>
+          <g class="vzb-bmc-map-graph"></g>
       </svg>
       <svg class="vzb-bubblemap-svg vzb-export">
           <g class="vzb-bmc-graph">
               <g class="vzb-bmc-year"></g>
 
-              <g class="vzb-bmc-lines"></g>
               <g class="vzb-bmc-bubbles"></g>
-              <g class="vzb-bmc-bubble-labels"></g>
 
-
-              <g class="vzb-bmc-axis-y-title">
+              <g class="vzb-bmc-axis-s-title">
                   <text></text>
               </g>
 
-              <g class="vzb-bmc-axis-c-title">
+              <g class="vzb-bmc-axis-c-title vzb-hidden">
                   <text></text>
               </g>
 
-              <g class="vzb-bmc-axis-y-info vzb-noexport">
-              </g>
+              <g class="vzb-bmc-axis-s-info vzb-noexport"></g>
 
-              <g class="vzb-bmc-axis-c-info vzb-noexport">
-              </g>
+              <g class="vzb-bmc-axis-c-info vzb-noexport"></g>
 
               <g class="vzb-data-warning vzb-noexport">
                   <svg></svg>
                   <text></text>
               </g>
-              <g class="vzb-bmc-labels"></g>
           </g>
           <rect class="vzb-bmc-forecastoverlay vzb-hidden" x="0" y="0" width="100%" height="100%" fill="url(#vzb-bmc-pattern-lines)" pointer-events='none'></rect>
       </svg>
+      <div class="vzb-bmc-labels vzb-export"></div>
       <svg>
           <defs>
               <pattern id="vzb-bmc-pattern-lines" x="0" y="0" patternUnits="userSpaceOnUse" width="50" height="50" viewBox="0 0 10 10"> 
@@ -114,9 +117,9 @@ export default class VizabiBubblemap extends BaseComponent {
       labelListContainer: this.element.select(".vzb-bmc-bubble-labels"),
       dataWarning: this.element.select(".vzb-data-warning"),
   
-      yTitle: this.element.select(".vzb-bmc-axis-y-title"),
+      sTitle: this.element.select(".vzb-bmc-axis-s-title"),
       cTitle: this.element.select(".vzb-bmc-axis-c-title"),
-      yInfo: this.element.select(".vzb-bmc-axis-y-info"),
+      sInfo: this.element.select(".vzb-bmc-axis-y-info"),
       cInfo: this.element.select(".vzb-bmc-axis-c-info"),
       forecastOverlay: this.element.select(".vzb-bmc-forecastoverlay")
     };
@@ -146,8 +149,8 @@ export default class VizabiBubblemap extends BaseComponent {
     this.localise = this.services.locale.auto();
 
     // new scales and axes
-    this.sScale = this.MDL.size.scale.d3Scale.copy();
-    this.cScale = this.MDL.color.scale.d3Scale;
+    this.sScale = this.MDL.size.scale.d3Scale;
+    this.cScale = color => color? this.MDL.color.scale.d3Scale(color) : COLOR_WHITEISH;
 
     if (this._updateLayoutProfile()) return; //return if exists with error
 
@@ -156,6 +159,7 @@ export default class VizabiBubblemap extends BaseComponent {
 
       this.addReaction(this._initMap);
       this.addReaction(this._rescaleMap);
+      this.addReaction(this._drawHeader);
 
       this.addReaction(this._drawForecastOverlay);
       
@@ -376,14 +380,14 @@ export default class VizabiBubblemap extends BaseComponent {
     return this.__dataProcessed = this.model.dataArray
       .concat()
       .map(this.getValue)
+      //TODO sorting can be done via order encoding
       .sort((a, b) => b.size - a.size);
   }
 
   _createAndDeleteBubbles() {
 
     this.bubbles = this.DOM.bubbleContainer.selectAll(".vzb-bmc-bubble")
-      .data(this.__dataProcessed, d => d[Symbol.for("key")])
-      .order();
+      .data(this.__dataProcessed, d => d[Symbol.for("key")]);
 
     //exit selection
     this.bubbles.exit().remove();
@@ -392,7 +396,6 @@ export default class VizabiBubblemap extends BaseComponent {
     this.bubbles = this.bubbles.enter().append("circle")
       .attr("class", "vzb-bmc-bubble")
       .attr("id", (d) => `vzb-br-bar-${d[Symbol.for("key")]}-${this.id}`)
-      .classed("vzb-selected", (d) => this.MDL.selected.has(d))
       .merge(this.bubbles);
 
     if(!utils.isTouchDevice()){
@@ -430,42 +433,40 @@ export default class VizabiBubblemap extends BaseComponent {
         //_this.updateTitleNumbers();
         //_this.fitSizeOfTitles();
 
-        //clear tooltip
-        _this._setTooltip();
+        _this._labels.clearTooltip();
       },
       click(d) {
-        _this.MDL.selected.toggle(d);
+        _this.MDL.highlighted.delete(d);
+        _this._labels.clearTooltip();
+        _this.selectToggleMarker(d);
       },
       tap(d) {
-        _this.MDL.selected.toggle(d);
+        _this.selectToggleMarker(d);
         d3.event.stopPropagation();
       }
     };
   }
 
-  _setTooltip(d) {
-    if (d) {
-      const labelValues = {};
-      const tooltipCache = {};
-      const mouse = d3.mouse(this.DOM.graph.node()).map(d => parseInt(d));
-      const x = d.cLoc[0] || mouse[0];
-      const y = d.cLoc[1] || mouse[1];
-      const offset = d.r || 0;
-
-      labelValues.valueS = d.size;
-      labelValues.labelText = d.label;
-      tooltipCache.labelX0 = labelValues.valueX = x / this.width;
-      tooltipCache.labelY0 = labelValues.valueY = y / this.height;
-      tooltipCache.scaledS0 = offset;
-      tooltipCache.scaledC0 = null;
-
-      this._labels.setTooltip(d, labelValues.labelText, tooltipCache, labelValues);
-    } else {
-      this._labels.setTooltip();
-    }
+  selectToggleMarker(d){
+    if(d) this.MDL.selected.toggle(d);
   }
 
-  _drawData(duration, reposition) {
+  _setTooltip(d) {
+    const mouse = d3.mouse(this.DOM.graph.node()).map(d => parseInt(d));
+
+    //TODO why divide by width and height? why do it here and not in labels comp?
+    this._labels.setTooltip({
+      d: d,
+      text: d.label + ": " + this.localise(d.size),
+      centerX: (d.center[0] || mouse[0]) / this.width,
+      centerY: (d.center[1] || mouse[1]) / this.height,
+      offset: d.r || 0,
+      size: d.label_size,
+      color: this.cScale(d.color)
+    });
+  }
+
+  _drawData(duration) {
     this.services.layout.width + this.services.layout.height;
     
     this._processFrameData();
@@ -474,28 +475,30 @@ export default class VizabiBubblemap extends BaseComponent {
 
     const _this = this;
     if (!duration) duration = this.__duration;
-    if (!reposition) reposition = true;
     if (!this.bubbles) return utils.warn("redrawDataPoints(): no entityBubbles defined. likely a premature call, fix it!");
 
-    this.bubbles.each(function(d, index) {
+    this.bubbles.each(function(d) {
       const view = d3.select(this);
 
-      const valueX = d.lon;
-      const valueY = d.lat;
-      const valueS = d.size;
-      const valueC = d.color;
-      const valueL = d.label;
+      d.hidden = (!d.size && d.size !== 0) || d.lon == null || d.lat == null;
 
-      d.hidden = (!valueS && valueS !== 0) || valueX == null || valueY == null;
+      d.r = utils.areaToRadius(_this.sScale(d.size)||0);
+      d.center = _this.skew(_this.projection([d.lon || 0, d.lat || 0]));
 
-      view.classed("vzb-hidden", d.hidden);
-      d.r = utils.areaToRadius(_this.sScale(valueS || 0));
-      d.cLoc = _this.skew(_this.projection([valueX || 0, valueY || 0]));
       view
-        .attr("r", d.r)
-        .attr("fill", valueC != null ? _this.cScale(valueC) : COLOR_WHITEISH)
-        .attr("cx", d.cLoc[0])
-        .attr("cy", d.cLoc[1]); 
+        .classed("vzb-hidden", d.hidden)
+        .attr("cx", d.center[0])
+        .attr("cy", d.center[1]);
+        
+      if (view.classed("vzb-hidden") !== d.hidden || !duration) {
+        view
+          .attr("r", d.r)
+          .attr("fill", _this.cScale(d.color));
+      } else {
+        view.transition().duration(duration).ease(d3.easeLinear)
+          .attr("r", d.r)
+          .attr("fill", _this.cScale(d.color));
+      }
 
       _this._updateLabel(d, duration);
 
@@ -525,10 +528,10 @@ export default class VizabiBubblemap extends BaseComponent {
       //     geo.style("fill", valueC != null ? _this.cScale(valueC) : "#999");
 
       //   if (reposition) {
-      //     d.cLoc = _this.skew(_this.projection([valueX || 0, valueY || 0]));
+      //     d.center = _this.skew(_this.projection([valueX || 0, valueY || 0]));
 
-      //     view.attr("cx", d.cLoc[0])
-      //       .attr("cy", d.cLoc[1]); 
+      //     view.attr("cx", d.center[0])
+      //       .attr("cy", d.center[1]); 
       //   }
 
       //   if (duration) {
@@ -568,13 +571,13 @@ export default class VizabiBubblemap extends BaseComponent {
       const showhide = d.hidden !== d.hidden_1;
       const valueLST = null;
       const cache = {
-        labelX0: d.cLoc[0] / this.width,
-        labelY0: d.cLoc[1] / this.height,
+        labelX0: d.center[0] / this.width,
+        labelY0: d.center[1] / this.height,
         scaledS0: d.size ? utils.areaToRadius(this.sScale(d.size)) : null,
-        scaledC0: d.color != null ? this.cScale(d.color) : this.COLOR_WHITEISH
+        scaledC0: this.cScale(d.color)
       };
 
-      this._labels.updateLabel(d, cache, d.cLoc[0] / this.width, d.cLoc[1] / this.height, d.size, d.color, d.label, valueLST, duration, showhide);
+      this._labels.updateLabel(d, cache, d.center[0] / this.width, d.center[1] / this.height, d.size, d.color, d.label, valueLST, duration, showhide);
     }
   }
 
@@ -596,7 +599,9 @@ export default class VizabiBubblemap extends BaseComponent {
   }
 
   updateMarkerSizeLimits() {
+    //this is very funny
     this.services.layout.width + this.services.layout.height;
+    this.MDL.size.scale.domain;
 
     const {
       minRadiusPx,
@@ -617,29 +622,10 @@ export default class VizabiBubblemap extends BaseComponent {
   }
 
 
-  // selectMarkers() {
-  //   const someHighlighted = this.MDL.highlighted.markers.size > 0;
-  //   const someSelected = this.MDL.selected.markers.size > 0;
-
-  //   if (utils.isTouchDevice()) {
-  //     this._labels.showCloseCross(null, false);
-  //     if (someHighlighted) {
-  //       this.model.marker.clearHighlighted();
-  //     } else {
-  //       this.updateTitleNumbers();
-  //       this.fitSizeOfTitles();
-  //     }
-  //   } else {
-  //     // hide recent hover tooltip
-  //     if (!this.hovered || this.model.marker.isSelected(this.hovered)) {
-  //       this._setTooltip();
-  //     }
-  //   }
-
-  // }
 
   _updateOpacity() {
     const _this = this;
+    this.MDL.frame.value; //listen
 
     const {
       opacityHighlightDim,
@@ -683,7 +669,123 @@ export default class VizabiBubblemap extends BaseComponent {
     );
   }
 
+
+
+  _drawHeader() {
+    const {
+      margin,
+      headerMargin,
+      infoElHeight,
+      infoElMargin,
+    } = this.profileConstants;
+
+    this.services.layout.width + this.services.layout.height;
+
+    const sText = this.options.sTitle || 
+      this.localise("buttons/size") + ": " + this.MDL.size.data.conceptProps.name;
+    const cText = this.options.cTitle || 
+      this.localise("buttons/size") + ": " + this.MDL.color.data.conceptProps.name;
+
+    const sTitle = this.DOM.sTitle.select("text")
+      .text(sText)
+      // .on("click", () => {
+      //   _this.parent
+      //     .findChildByName("gapminder-treemenu")
+      //     .markerID("size")
+      //     .alignX(_this.model.locale.isRTL() ? "right" : "left")
+      //     .alignY("top")
+      //     .updateView()
+      //     .toggle();
+      // });
+
+    const cTitle = this.DOM.cTitle.select("text")
+      .text(cText)
+      // .on("click", () => {
+      //   _this.parent
+      //     .findChildByName("gapminder-treemenu")
+      //     .markerID("color")
+      //     .alignX(_this.model.locale.isRTL() ? "right" : "left")
+      //     .alignY("top")
+      //     .updateView()
+      //     .toggle();
+      // });
+
+    // utils.setIcon(this.dataWarningEl, ICON_WARN).select("svg").attr("width", "0px").attr("height", "0px");
+    // this.dataWarningEl.append("text")
+    //   .attr("text-anchor", "end")
+    //   .text(this.translator("hints/dataWarning"));
+
+    // this.dataWarningEl
+    //   .on("click", () => {
+    //     _this.parent.findChildByName("gapminder-datawarning").toggle();
+    //   })
+    //   .on("mouseover", () => {
+    //     _this.updateDoubtOpacity(1);
+    //   })
+    //   .on("mouseout", () => {
+    //     _this.updateDoubtOpacity();
+    //   });
+
+    
+
+    const sTitleBBox = sTitle.node().getBBox();
+
+    const sTitleTx = headerMargin.left;
+    const sTitleTy = headerMargin.top + sTitleBBox.height;
+    sTitle.attr("transform", `translate(${sTitleTx}, ${sTitleTy})`);
+    
+    const sInfoTx = sTitleTx + sTitleBBox.width + infoElMargin;
+    const sInfoTy = headerMargin.top + infoElHeight / 4;
+    this.DOM.sInfo.attr("transform", `translate(${sInfoTx}, ${sInfoTy})`);
+    this._drawInfoEl(this.DOM.sInfo, sTitle, this.MDL.size);
+
+
+    const cTitleBBox = cTitle.node().getBBox();
+
+    const cTitleTx = headerMargin.left;
+    const cTitleTy = sTitleTy + cTitleBBox.height + infoElMargin;
+    cTitle.attr("transform", `translate(${cTitleTx}, ${cTitleTy})`);
+    
+    const cInfoTx = cTitleTx + cTitleBBox.width + infoElMargin;
+    const cInfoTy = sTitleTy + infoElHeight / 4 + infoElMargin;
+    this.DOM.sInfo.attr("transform", `translate(${cInfoTx}, ${cInfoTy})`);
+    this._drawInfoEl(this.DOM.cInfo, cTitle, this.MDL.color);
+
+
+  }
+
+  _drawInfoEl(element, titleElement, model){
+    const dataNotes = this.root.findChild({type: "DataNotes"});
+    const conceptProps = model.data.conceptProps;
+    const infoElHeight = this.profileConstants.infoElHeight;
+
+    element
+      .on("click", () => {
+        dataNotes.pin();
+      })
+      .on("mouseover", function() {
+        const rect = this.getBBox();
+        const ctx = utils.makeAbsoluteContext(this, this.farthestViewportElement);
+        const coord = ctx(rect.x - 10, rect.y + rect.height + 10);
+        dataNotes
+          .setEncoding(model)
+          .show()
+          .setPos(coord.x, coord.y);
+      })
+      .on("mouseout", () => {
+        dataNotes.hide();
+      })
+      .html(ICON_QUESTION)
+      .select("svg")
+      .attr("width", infoElHeight + "px").attr("height", infoElHeight + "px")
+      .classed("vzb-hidden", 
+        !conceptProps.description && !conceptProps.sourceLink || titleElement.classed("vzb-hidden")
+      );
+  }
+
 }
+
+
 
 
 VizabiBubblemap.DEFAULT_UI = {
@@ -700,14 +802,14 @@ VizabiBubblemap.DEFAULT_UI = {
     path: null,
     colorGeo: false,
     preserveAspectRatio: false,
-    scale: 0.95,
+    scale: 1.1,
     offset: {
       top: 0.05,
       right: 0,
-      bottom: -0.12,
-      left: 0
+      bottom: -0.2,
+      left: -0.15
     },
-    projection: "geoAzimuthalEqualArea",
+    projection: "geo" + "Aitoff",
     topology: {
       path: "assets/world-50m.json",
       objects: {
@@ -844,105 +946,11 @@ class Old {
 
   }
 
-  updateUIStrings() {
-    const _this = this;
-
-    this.translator = this.model.locale.getTFunction();
-    const conceptPropsS = _this.model.marker.size.getConceptprops();
-    const conceptPropsC = _this.model.marker.color.getConceptprops();
-
-    this.strings = {
-      title: {
-        S: conceptPropsS.name,
-        C: conceptPropsC.name
-      }
-    };
-
-    this.yTitleEl.select("text")
-      .text(this.translator("buttons/size") + ": " + this.strings.title.S)
-      .on("click", () => {
-        _this.parent
-          .findChildByName("gapminder-treemenu")
-          .markerID("size")
-          .alignX(_this.model.locale.isRTL() ? "right" : "left")
-          .alignY("top")
-          .updateView()
-          .toggle();
-      });
-
-    this.cTitleEl.select("text")
-      .text(this.translator("buttons/color") + ": " + this.strings.title.C)
-      .on("click", () => {
-        _this.parent
-          .findChildByName("gapminder-treemenu")
-          .markerID("color")
-          .alignX(_this.model.locale.isRTL() ? "right" : "left")
-          .alignY("top")
-          .updateView()
-          .toggle();
-      });
-
-    utils.setIcon(this.dataWarningEl, ICON_WARN).select("svg").attr("width", "0px").attr("height", "0px");
-    this.dataWarningEl.append("text")
-      .attr("text-anchor", "end")
-      .text(this.translator("hints/dataWarning"));
-
-    this.dataWarningEl
-      .on("click", () => {
-        _this.parent.findChildByName("gapminder-datawarning").toggle();
-      })
-      .on("mouseover", () => {
-        _this.updateDoubtOpacity(1);
-      })
-      .on("mouseout", () => {
-        _this.updateDoubtOpacity();
-      });
-
-    this.yInfoEl
-      .html(ICON_QUESTION)
-      .select("svg").attr("width", "0px").attr("height", "0px")
-      .style("opacity", Number(Boolean(conceptPropsS.description || conceptPropsS.sourceLink)));
-
-    //TODO: move away from UI strings, maybe to ready or ready once
-    this.yInfoEl.on("click", () => {
-      _this.parent.findChildByName("gapminder-datanotes").pin();
-    });
-    this.yInfoEl.on("mouseover", function() {
-      const rect = this.getBBox();
-      const coord = utils.makeAbsoluteContext(this, this.farthestViewportElement)(rect.x - 10, rect.y + rect.height + 10);
-      const toolRect = _this.root.element.getBoundingClientRect();
-      const chartRect = _this.element.node().getBoundingClientRect();
-      _this.parent.findChildByName("gapminder-datanotes").setHook("size").show().setPos(coord.x + chartRect.left - toolRect.left, coord.y);
-    });
-    this.yInfoEl.on("mouseout", () => {
-      _this.parent.findChildByName("gapminder-datanotes").hide();
-    });
-
-    this.cInfoEl
-      .html(ICON_QUESTION)
-      .select("svg").attr("width", "0px").attr("height", "0px")
-      .style("opacity", Number(Boolean(conceptPropsC.description || conceptPropsC.sourceLink)));
-
-    //TODO: move away from UI strings, maybe to ready or ready once
-    this.cInfoEl.on("click", () => {
-      _this.parent.findChildByName("gapminder-datanotes").pin();
-    });
-    this.cInfoEl.on("mouseover", function() {
-      const rect = this.getBBox();
-      const coord = utils.makeAbsoluteContext(this, this.farthestViewportElement)(rect.x - 10, rect.y + rect.height + 10);
-      const toolRect = _this.root.element.getBoundingClientRect();
-      const chartRect = _this.element.node().getBoundingClientRect();
-      _this.parent.findChildByName("gapminder-datanotes").setHook("color").show().setPos(coord.x + chartRect.left - toolRect.left, coord.y);
-    });
-    this.cInfoEl.on("mouseout", () => {
-      _this.parent.findChildByName("gapminder-datanotes").hide();
-    });
-  }
 
   updateTitleNumbers() {
     const _this = this;
 
-    let mobile; // if is mobile device and only one bubble is selected, update the ytitle for the bubble
+    let mobile; // if is mobile device and only one bubble is selected, update the stitle for the bubble
     if (_this.isMobile && _this.model.marker.select && _this.model.marker.select.length === 1) {
       mobile = _this.model.marker.select[0];
     }
@@ -966,48 +974,48 @@ class Old {
         valueC = this.model.marker.color.getColorlegendMarker().label.getItems()[valueC] || "";
       }
 
-      _this.yTitleEl.select("text")
+      _this.sTitleEl.select("text")
         .text(_this.translator("buttons/size") + ": " + formatterS(valueS) + " " + unitS);
 
       _this.cTitleEl.select("text")
         .text(_this.translator("buttons/color") + ": " +
           (valueC || valueC === 0 ? formatterC(valueC) + " " + unitC : _this.translator("hints/nodata")));
 
-      this.yInfoEl.classed("vzb-hidden", true);
+      this.sInfoEl.classed("vzb-hidden", true);
       this.cInfoEl.classed("vzb-hidden", true);
     } else {
-      this.yTitleEl.select("text")
+      this.sTitleEl.select("text")
         .text(this.translator("buttons/size") + ": " + this.strings.title.S);
       this.cTitleEl.select("text")
         .text(this.translator("buttons/color") + ": " + this.strings.title.C);
 
-      this.yInfoEl.classed("vzb-hidden", false);
+      this.sInfoEl.classed("vzb-hidden", false);
       this.cInfoEl.classed("vzb-hidden", false || this.cTitleEl.classed("vzb-hidden"));
     }
   }
 
   fitSizeOfTitles() {
     // reset font sizes first to make the measurement consistent
-    const yTitleText = this.yTitleEl.select("text");
-    yTitleText.style("font-size", null);
+    const sTitleText = this.sTitleEl.select("text");
+    sTitleText.style("font-size", null);
 
     const cTitleText = this.cTitleEl.select("text");
     cTitleText.style("font-size", null);
 
-    const yTitleBB = yTitleText.node().getBBox();
-    const cTitleBB = this.cTitleEl.classed("vzb-hidden") ? yTitleBB : cTitleText.node().getBBox();
+    const sTitleBB = sTitleText.node().getBBox();
+    const cTitleBB = this.cTitleEl.classed("vzb-hidden") ? sTitleBB : cTitleText.node().getBBox();
 
     const font =
-      Math.max(parseInt(yTitleText.style("font-size")), parseInt(cTitleText.style("font-size")))
-      * this.width / Math.max(yTitleBB.width, cTitleBB.width);
+      Math.max(parseInt(sTitleText.style("font-size")), parseInt(cTitleText.style("font-size")))
+      * this.width / Math.max(sTitleBB.width, cTitleBB.width);
 
-    if (Math.max(yTitleBB.width, cTitleBB.width) > this.width) {
-      yTitleText.style("font-size", font + "px");
+    if (Math.max(sTitleBB.width, cTitleBB.width) > this.width) {
+      sTitleText.style("font-size", font + "px");
       cTitleText.style("font-size", font + "px");
     } else {
 
       // Else - reset the font size to default so it won't get stuck
-      yTitleText.style("font-size", null);
+      sTitleText.style("font-size", null);
       cTitleText.style("font-size", null);
     }
 
@@ -1026,14 +1034,14 @@ class Old {
     });
     this.year.resize(this.width, this.height);
 
-    this.yTitleEl
+    this.sTitleEl
       .style("font-size", infoElHeight)
       .attr("transform", "translate(" + (isRTL ? this.width : 0) + "," + margin.top + ")");
 
-    const yTitleBB = this.yTitleEl.select("text").node().getBBox();
+    const sTitleBB = this.sTitleEl.select("text").node().getBBox();
 
     //hide the second line about color in large profile or when color is constant
-    this.cTitleEl.attr("transform", "translate(" + (isRTL ? this.width : 0) + "," + (margin.top + yTitleBB.height) + ")")
+    this.cTitleEl.attr("transform", "translate(" + (isRTL ? this.width : 0) + "," + (margin.top + sTitleBB.height) + ")")
       .classed("vzb-hidden", this.getLayoutProfile() === "large" || this.model.marker.color.use == "constant");
 
     const warnBB = this.dataWarningEl.select("text").node().getBBox();
@@ -1047,15 +1055,15 @@ class Old {
       .attr("transform", "translate(" + (this.width) + "," + (this.height - warnBB.height * 0.5) + ")")
       .select("text");
 
-    if (this.yInfoEl.select("svg").node()) {
-      const titleBBox = this.yTitleEl.node().getBBox();
-      const t = utils.transform(this.yTitleEl.node());
+    if (this.sInfoEl.select("svg").node()) {
+      const titleBBox = this.sTitleEl.node().getBBox();
+      const t = utils.transform(this.sTitleEl.node());
       const hTranslate = isRTL ? (titleBBox.x + t.translateX - infoElHeight * 1.4) : (titleBBox.x + t.translateX + titleBBox.width + infoElHeight * 0.4);
 
-      this.yInfoEl.select("svg")
+      this.sInfoEl.select("svg")
         .attr("width", infoElHeight)
         .attr("height", infoElHeight);
-      this.yInfoEl.attr("transform", "translate("
+      this.sInfoEl.attr("transform", "translate("
         + hTranslate + ","
         + (t.translateY - infoElHeight * 0.8) + ")");
     }
@@ -1096,7 +1104,28 @@ class Old {
       _this.updateTitleNumbers();
       _this.fitSizeOfTitles();
     }
+  }
 
+  selectMarkers() {
+    const someHighlighted = this.MDL.highlighted.markers.size > 0;
+    const someSelected = this.MDL.selected.markers.size > 0;
+
+    if (utils.isTouchDevice()) {
+      this._labels.showCloseCross(null, false);
+      if (someHighlighted) {
+        this.model.marker.clearHighlighted();
+      } else {
+        this.updateTitleNumbers();
+        this.fitSizeOfTitles();
+      }
+    } else {
+      // hide recent hover tooltip
+      if (!this.hovered || this.model.marker.isSelected(this.hovered)) {
+        this._labels.clearTooltip();
+      }
+    }
+
+  }
 
     //      if (!this.selectList || !this.someSelected) return;
     //      this.selectList.classed("vzb-highlight", function (d) {
@@ -1110,7 +1139,7 @@ class Old {
     //
     //      });
 
-  }
+  
 
 
 
