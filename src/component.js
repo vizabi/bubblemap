@@ -60,7 +60,8 @@ export default class VizabiBubblemap extends BaseComponent {
         LABELS_CONTAINER_CLASS: "vzb-bmc-labels",
         LINES_CONTAINER_CLASS: "vzb-bmc-lines",
         SUPPRESS_HIGHLIGHT_DURING_PLAY: false
-      }
+      },
+      name: "labels"
     }];
 
     config.template = `
@@ -89,10 +90,13 @@ export default class VizabiBubblemap extends BaseComponent {
                   <svg></svg>
                   <text></text>
               </g>
+              <g class="vzb-bmc-lines"></g>
+              <svg class="vzb-bmc-labels-crop">
+                <g class="vzb-bmc-labels"></g>
+              </svg>
           </g>
           <rect class="vzb-bmc-forecastoverlay vzb-hidden" x="0" y="0" width="100%" height="100%" fill="url(#vzb-bmc-pattern-lines)" pointer-events='none'></rect>
       </svg>
-      <div class="vzb-bmc-labels vzb-export"></div>
       <svg>
           <defs>
               <pattern id="vzb-bmc-pattern-lines" x="0" y="0" patternUnits="userSpaceOnUse" width="50" height="50" viewBox="0 0 10 10"> 
@@ -140,8 +144,8 @@ export default class VizabiBubblemap extends BaseComponent {
   draw(){
     this.MDL = {
       frame: this.model.encoding.get("frame"),
-      selected: this.model.encoding.get("selected").data.filter,
-      highlighted: this.model.encoding.get("highlighted").data.filter,
+      selected: this.model.encoding.get("selected"),
+      highlighted: this.model.encoding.get("highlighted"),
       size: this.model.encoding.get("size"),
       color: this.model.encoding.get("color"),
       label: this.model.encoding.get("label")
@@ -151,6 +155,9 @@ export default class VizabiBubblemap extends BaseComponent {
     // new scales and axes
     this.sScale = this.MDL.size.scale.d3Scale;
     this.cScale = color => color? this.MDL.color.scale.d3Scale(color) : COLOR_WHITEISH;
+
+    this.TIMEDIM = this.MDL.frame.data.concept;
+    this.KEYS = this.model.data.space.filter(dim => dim !== this.TIMEDIM);
 
     if (this._updateLayoutProfile()) return; //return if exists with error
 
@@ -417,53 +424,80 @@ export default class VizabiBubblemap extends BaseComponent {
         if (_this.MDL.frame.dragging) return;
 
         _this.hovered = d;
-        _this.MDL.highlighted.set(d);
+        _this.MDL.highlighted.data.filter.set(d);
         //put the exact value in the size title
         //this.updateTitleNumbers();
         //_this.fitSizeOfTitles();
        
         // if not selected, show tooltip
-        if (!_this.MDL.selected.has(d)) _this._setTooltip(d);
+        if (!_this.MDL.selected.data.filter.has(d)) _this._setTooltip(d);
       },
       mouseout(d) {
         if (_this.MDL.frame.dragging) return;
 
         _this.hovered = null;
-        _this.MDL.highlighted.delete(d);
+        _this.MDL.highlighted.data.filter.delete(d);
         //_this.updateTitleNumbers();
         //_this.fitSizeOfTitles();
 
-        _this._labels.clearTooltip();
+        _this._setTooltip();
+        //_this._labels.clearTooltip();
       },
       click(d) {
-        _this.MDL.highlighted.delete(d);
-        _this._labels.clearTooltip();
-        _this.selectToggleMarker(d);
+        _this.MDL.highlighted.data.filter.delete(d);
+        _this._setTooltip();
+        //_this._labels.clearTooltip();
+        _this.MDL.selected.data.filter.toggle(d);
+        //_this.selectToggleMarker(d);
       },
       tap(d) {
-        _this.selectToggleMarker(d);
+        _this._setTooltip();
+        _this.MDL.selected.data.filter.toggle(d);
+        //_this.selectToggleMarker(d);
         d3.event.stopPropagation();
       }
     };
   }
 
   selectToggleMarker(d){
-    if(d) this.MDL.selected.toggle(d);
+    if(d) this.MDL.selected.data.filter.toggle(d);
   }
 
   _setTooltip(d) {
-    const mouse = d3.mouse(this.DOM.graph.node()).map(d => parseInt(d));
+    if (d) {
+      const labelValues = {};
+      const tooltipCache = {};
+      const mouse = d3.mouse(this.DOM.graph.node()).map(d => parseInt(d));
+      const x = d.center[0] || mouse[0];
+      const y = d.center[1] || mouse[1];
+      const offset = d.r || 0;
+
+      labelValues.valueS = d.size;
+      labelValues.labelText = this.__labelWithoutFrame(d);
+      tooltipCache.labelX0 = labelValues.valueX = x / this.width;
+      tooltipCache.labelY0 = labelValues.valueY = y / this.height;
+      tooltipCache.scaledS0 = offset;
+      tooltipCache.scaledC0 = null;
+
+      this._labels.setTooltip(d, labelValues.labelText, tooltipCache, labelValues);
+    } else {
+      this._labels.setTooltip();
+    }
 
     //TODO why divide by width and height? why do it here and not in labels comp?
-    this._labels.setTooltip({
-      d: d,
-      text: d.label + ": " + this.localise(d.size),
-      centerX: (d.center[0] || mouse[0]) / this.width,
-      centerY: (d.center[1] || mouse[1]) / this.height,
-      offset: d.r || 0,
-      size: d.label_size,
-      color: this.cScale(d.color)
-    });
+    // this._labels.setTooltip({
+    //   d: d,
+    //   text: d.label + ": " + this.localise(d.size),
+    //   centerX: (d.center[0] || mouse[0]) / this.width,
+    //   centerY: (d.center[1] || mouse[1]) / this.height,
+    //   offset: d.r || 0,
+    //   size: d.size_label,
+    //   color: this.cScale(d.color)
+    // });
+  }
+
+  __labelWithoutFrame(d) {
+    return this.KEYS.map(dim => this.localise(d.label[dim])).join(' ');
   }
 
   _drawData(duration) {
@@ -566,7 +600,7 @@ export default class VizabiBubblemap extends BaseComponent {
     if (duration == null) duration = this.duration;
 
     // only for selected entities
-    if (this.MDL.selected.has(d)) {
+    if (this.MDL.selected.data.filter.has(d)) {
 
       const showhide = d.hidden !== d.hidden_1;
       const valueLST = null;
@@ -577,7 +611,7 @@ export default class VizabiBubblemap extends BaseComponent {
         scaledC0: this.cScale(d.color)
       };
 
-      this._labels.updateLabel(d, cache, d.center[0] / this.width, d.center[1] / this.height, d.size, d.color, d.label, valueLST, duration, showhide);
+      this._labels.updateLabel(d, cache, d.center[0] / this.width, d.center[1] / this.height, d.size, d.color, this.__labelWithoutFrame(d), valueLST, duration, showhide);
     }
   }
 
@@ -633,13 +667,16 @@ export default class VizabiBubblemap extends BaseComponent {
       opacityRegular,
     } = this.ui;
 
-    const someHighlighted = this.MDL.highlighted.markers.size > 0;
-    const someSelected = this.MDL.selected.markers.size > 0;
+    const _highlighted = this.MDL.highlighted.data.filter;
+    const _selected = this.MDL.selected.data.filter;
+    
+    const someHighlighted = _highlighted.markers.size > 0;
+    const someSelected = _selected.markers.size > 0;
 
     this.bubbles
       .style("opacity", d => {
-        if (_this.MDL.highlighted.has(d)) return opacityRegular;
-        if (_this.MDL.selected.has(d)) return opacityRegular;
+        if (_highlighted.has(d)) return opacityRegular;
+        if (_selected.has(d)) return opacityRegular;
 
         if (someSelected) return opacitySelectDim;
         if (someHighlighted) return opacityHighlightDim;
