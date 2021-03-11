@@ -87,7 +87,7 @@ class _VizabiBubblemap extends BaseComponent {
                   <text></text>
               </g>
 
-              <g class="vzb-bmc-axis-c-title vzb-hidden">
+              <g class="vzb-bmc-axis-c-title">
                   <text></text>
               </g>
 
@@ -737,31 +737,35 @@ class _VizabiBubblemap extends BaseComponent {
     const sText = this.options.sTitle || 
       this.localise("buttons/size") + ": " + this.MDL.size.data.conceptProps.name;
     const cText = this.options.cTitle || 
-      this.localise("buttons/size") + ": " + this.MDL.color.data.conceptProps.name;
+      this.localise("buttons/color") + ": " + this.MDL.color.data.conceptProps.name;
 
-    const sTitle = this.DOM.sTitle.select("text")
-      .text(sText)
-      // .on("click", () => {
-      //   _this.parent
-      //     .findChildByName("gapminder-treemenu")
-      //     .markerID("size")
-      //     .alignX(_this.model.locale.isRTL() ? "right" : "left")
-      //     .alignY("top")
-      //     .updateView()
-      //     .toggle();
-      // });
+    this.treemenu = this.root.findChild({type: "TreeMenu"});
+    const sTitle = this.DOM.sTitle
+      .classed("vzb-disabled", this.treemenu.state.ownReadiness !== Utils.STATUS.READY)
+      .on("click", () => {
+        this.treemenu
+          .encoding("size")
+          .alignX(this.services.locale.isRTL() ? "right" : "left")
+          .alignY("top")
+          .updateView()
+          .toggle();
+      })
+      .select("text")
+      .text(sText);
 
-    const cTitle = this.DOM.cTitle.select("text")
+    const cTitle = this.DOM.cTitle
+      .classed("vzb-disabled", this.treemenu.state.ownReadiness !== Utils.STATUS.READY)
+      .classed("vzb-hidden", this.services.layout.profile == "LARGE")
+      .on("click", () => {
+        this.treemenu
+          .encoding("color")
+          .alignX(this.services.locale.isRTL() ? "right" : "left")
+          .alignY("top")
+          .updateView()
+          .toggle();
+      })
+      .select("text")
       .text(cText)
-      // .on("click", () => {
-      //   _this.parent
-      //     .findChildByName("gapminder-treemenu")
-      //     .markerID("color")
-      //     .alignX(_this.model.locale.isRTL() ? "right" : "left")
-      //     .alignY("top")
-      //     .updateView()
-      //     .toggle();
-      // });
 
     // utils.setIcon(this.dataWarningEl, ICON_WARN).select("svg").attr("width", "0px").attr("height", "0px");
     // this.dataWarningEl.append("text")
@@ -801,7 +805,8 @@ class _VizabiBubblemap extends BaseComponent {
     
     const cInfoTx = cTitleTx + cTitleBBox.width + infoElMargin;
     const cInfoTy = sTitleTy + infoElHeight / 4 + infoElMargin;
-    this.DOM.sInfo.attr("transform", `translate(${cInfoTx}, ${cInfoTy})`);
+    this.DOM.cInfo.attr("transform", `translate(${cInfoTx}, ${cInfoTy})`)
+      .classed("vzb-hidden", this.services.layout.profile == "LARGE");
     this._drawInfoEl(this.DOM.cInfo, cTitle, this.MDL.color);
 
 
