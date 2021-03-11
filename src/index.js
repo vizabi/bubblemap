@@ -88,11 +88,5 @@ export default class BubbleMap extends BaseComponent {
 }
 BubbleMap.DEFAULT_UI = {
   chart: {
-    viewWH: {
-      width: 0,
-      height: 0
-    },
-    opacitySelectDim: 0.3,
-    opacityRegular: 0.5,
   }
 };

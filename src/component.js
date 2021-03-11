@@ -833,14 +833,23 @@ class _VizabiBubblemap extends BaseComponent {
 
 
 
-VizabiBubblemap.DEFAULT_UI = {
-  showForecastOverlay: false,
+_VizabiBubblemap.DEFAULT_UI = {
+  showForecast: false,
+  showForecastOverlay: true,
+  pauseBeforeForecast: true,
+  opacityHighlight: 1.0,
+  opacitySelect: 1.0,
   opacityHighlightDim: 0.1,
   opacitySelectDim: 0.3,
-  opacityRegular: 1,
+  opacityRegular: 0.5,
   datawarning: {
     doubtDomain: [],
     doubtRange: []
+  },
+  labels: {
+    enabled: true,
+    dragging: true,
+    removeLabelBox: false
   },
   superhighlightOnMinimapHover: true,
   map: {
