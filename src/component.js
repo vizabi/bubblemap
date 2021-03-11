@@ -59,6 +59,9 @@ class _VizabiBubblemap extends BaseComponent {
   constructor(config) {
 
     config.subcomponents = [{
+      type: DynamicBackground,
+      placeholder: ".vzb-bmc-year"
+    },{
       type: Labels,
       placeholder: ".vzb-bmc-labels",      
       options: {
@@ -144,6 +147,7 @@ class _VizabiBubblemap extends BaseComponent {
     d3GeoProjection();
     
     this._labels = this.findChild({type: "Labels"});
+    this._year = this.findChild({type: "DynamicBackground"});
   }
 
   get MDL(){
@@ -178,7 +182,7 @@ class _VizabiBubblemap extends BaseComponent {
 
       this.addReaction(this._drawForecastOverlay);
       
-      this.addReaction(this._getDuration);
+      this.addReaction(this._updateYear);
       //this.addReaction(this._drawHeader);
       //this.addReaction(this._drawInfoEl);
       //this.addReaction(this._drawFooter);
@@ -197,20 +201,17 @@ class _VizabiBubblemap extends BaseComponent {
     });
   }
 
-
   _getDuration() {
     //smooth animation is needed when playing, except for the case when time jumps from end to start
     if(!this.MDL.frame) return 0;
     this.frameValue_1 = this.frameValue;
     this.frameValue = this.MDL.frame.value;
     return this.__duration = this.MDL.frame.playing && (this.frameValue - this.frameValue_1 > 0) ? this.MDL.frame.speed : 0;
+  }
 
-    //this.year.setText(this.model.time.formatDate(this.time), this.duration);
-    //this._updateForecastOverlay();
-
-    //possibly update the exact value in size title
-    //this.updateTitleNumbers();
-
+  _updateYear() {
+    const duration = this._getDuration();
+    this._year.setText(this.localise(this.MDL.frame.value), duration);
   }
 
   _drawForecastOverlay() {
@@ -636,6 +637,13 @@ class _VizabiBubblemap extends BaseComponent {
       maxRadiusEm * utils.hypotenuse(this.width, this.height)
     );
 
+    this._year.setConditions({ 
+      xAlign: "right", 
+      yAlign: "top", 
+      widthRatio: 2 / 10,
+      rightOffset: 30
+    });
+    this._year.resizeText(this.width, this.height);
     //this.repositionElements();
     //this.rescaleMap();
   }
