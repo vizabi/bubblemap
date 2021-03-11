@@ -11,7 +11,7 @@ import {
   Dialogs,
   ButtonList
 } from "VizabiSharedComponents";
-import VizabiBubblemap from "./component.js";
+import { VizabiBubblemap } from "./component.js";
 import { observable } from "mobx";
 
 const VERSION_INFO = { version: __VERSION, build: __BUILD };

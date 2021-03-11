@@ -1,7 +1,13 @@
-import { BaseComponent } from "VizabiSharedComponents";
-import { Labels } from "VizabiSharedComponents";
-import { LegacyUtils as utils} from "VizabiSharedComponents";
-import { Icons } from "VizabiSharedComponents";
+import {
+  BaseComponent,
+  Icons,
+  Utils,
+  LegacyUtils as utils,
+  Labels,
+  DynamicBackground
+} from "VizabiSharedComponents";
+
+import {decorate, computed} from "mobx";
 
 import topojson from "./topojson.js";
 import d3GeoProjection from "./d3.geoProjection.js";
@@ -48,7 +54,7 @@ const PROFILE_CONSTANTS_FOR_PROJECTOR = {
   }
 };
 
-export default class VizabiBubblemap extends BaseComponent {
+class _VizabiBubblemap extends BaseComponent {
 
   constructor(config) {
 
@@ -140,9 +146,8 @@ export default class VizabiBubblemap extends BaseComponent {
     this._labels = this.findChild({type: "Labels"});
   }
 
-
-  draw(){
-    this.MDL = {
+  get MDL(){
+    return {
       frame: this.model.encoding.get("frame"),
       selected: this.model.encoding.get("selected"),
       highlighted: this.model.encoding.get("highlighted"),
@@ -150,6 +155,9 @@ export default class VizabiBubblemap extends BaseComponent {
       color: this.model.encoding.get("color"),
       label: this.model.encoding.get("label")
     };
+  }
+
+  draw(){
     this.localise = this.services.locale.auto();
 
     // new scales and axes
@@ -857,6 +865,12 @@ VizabiBubblemap.DEFAULT_UI = {
     }
   }
 };
+
+
+//export default BubbleChart;
+export const VizabiBubblemap = decorate(_VizabiBubblemap, {
+  "MDL": computed
+});
 
 // this.model_binds = {
 //   "change:time.value": function(evt) {
