@@ -19,7 +19,7 @@ const VERSION_INFO = { version: __VERSION, build: __BUILD };
 export default class BubbleMap extends BaseComponent {
 
   constructor(config){
-    const marker = config.model.stores.markers.get("bubble");
+    const marker = config.splash(config.model.stores.markers.get("bubble"));
 
     config.name = "bubblemap";
 
