@@ -152,12 +152,12 @@ class _VizabiBubblemap extends BaseComponent {
 
   get MDL(){
     return {
-      frame: this.model.encoding.get("frame"),
-      selected: this.model.encoding.get("selected"),
-      highlighted: this.model.encoding.get("highlighted"),
-      size: this.model.encoding.get("size"),
-      color: this.model.encoding.get("color"),
-      label: this.model.encoding.get("label")
+      frame: this.model.encoding.frame,
+      selected: this.model.encoding.selected,
+      highlighted: this.model.encoding.highlighted,
+      size: this.model.encoding.size,
+      color: this.model.encoding.color,
+      label: this.model.encoding.label
     };
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "vizabi-bubblemap",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Bubble map tool for Vizabi 📊",
   "scripts": {
     "link": "npm link ../vizabi-shared-components",
