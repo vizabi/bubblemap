@@ -1,15 +1,17 @@
-@import "~bourbon/app/assets/stylesheets/bourbon";
-@import "~vizabi/src/assets/styles/mixins";
-@import "~vizabi/src/assets/styles/common";
-@import "~vizabi/src/assets/styles/chart";
+@import "../node_modules/bourbon/core/_bourbon.scss";
+@import "../node_modules/vizabi-shared-components/src/styles/vizabi-old/_mixins.scss";
+@import "../node_modules/vizabi-shared-components/src/styles/vizabi-old/_common.scss";
+@import "../node_modules/vizabi-shared-components/src/styles/vizabi-old/_chart.scss";
 
 .vzb-tool {
   $vzb-bmc-year-size: 15em;
 
   .vzb-bubblemap {
     @extend %vzb-chart-wrapper;
+    position: relative;
 
     .vzb-bmc-map-background {
+      position: absolute;
 
       .stroke {
         fill: none;
@@ -43,6 +45,7 @@
 
     .vzb-bubblemap-svg {
       @extend %vzb-chart-svg;
+      position: absolute;
 
       .vzb-bmc-year {
         @include opacity(.5);
@@ -146,7 +149,7 @@
         opacity: .8;
       }
 
-      .vzb-bmc-axis-y-title {
+      .vzb-bmc-axis-s-title {
         @extend %vzb-chart-axis-title;
         @include rtl {
           text {
@@ -189,7 +192,7 @@
   }
   &.vzb-large {
     .vzb-bubblemap {
-      .vzb-bmc-axis-y-title,
+      .vzb-bmc-axis-s-title,
       .vzb-bmc-axis-c-title {
         @extend %vzb-chart-axis-title-large;
       }
@@ -208,7 +211,7 @@
   }
   &.vzb-medium {
     .vzb-bubblemap {
-      .vzb-bmc-axis-y-title,
+      .vzb-bmc-axis-s-title,
       .vzb-bmc-axis-c-title {
         @extend %vzb-chart-axis-title-medium;
       }
@@ -227,7 +230,7 @@
   }
   &.vzb-small {
     .vzb-bubblemap {
-      .vzb-bmc-axis-y-title,
+      .vzb-bmc-axis-s-title,
       .vzb-bmc-axis-c-title {
         @extend %vzb-chart-axis-title-small;
       }
@@ -246,7 +249,7 @@
   }
   &.vzb-presentation {
     .vzb-bubblemap {
-      .vzb-bmc-axis-y-title,
+      .vzb-bmc-axis-s-title,
       .vzb-bmc-axis-c-title,
       .vzb-bmc-axis-info {
         font-size: $vzb-font-size-largest;
@@ -264,7 +267,7 @@
     }
 
     &.vzb-small {
-      .vzb-bmc-axis-y-title,
+      .vzb-bmc-axis-s-title,
       .vzb-bmc-axis-c-title {
         font-size: $vzb-font-size-medium;
       }

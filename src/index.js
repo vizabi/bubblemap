@@ -1,179 +1,92 @@
 import "./styles.scss";
-import component from "./component";
+import { 
+  BaseComponent,
+  TimeSlider,
+  DataNotes,
+  DataWarning,
+  LocaleService,
+  LayoutService,
+  TreeMenu,
+  SteppedSlider,
+  Dialogs,
+  ButtonList
+} from "VizabiSharedComponents";
+import { VizabiBubblemap } from "./component.js";
+import { observable } from "mobx";
 
 const VERSION_INFO = { version: __VERSION, build: __BUILD };
 
-//BAR CHART TOOL
-const BubbleMap = Vizabi.Tool.extend("BubbleMap", {
+export default class BubbleMap extends BaseComponent {
 
+  constructor(config){
+    const marker = config.splash(config.model.stores.markers.get("bubble"));
 
-  /**
-   * Initializes the tool (Bar Chart Tool).
-   * Executed once before any template is rendered.
-   * @param {Object} placeholder Placeholder element for the tool
-   * @param {Object} external_model Model as given by the external page
-   */
-  init(placeholder, external_model) {
+    config.name = "bubblemap";
 
-    this.name = "bubblemap";
+    config.subcomponents = [{
+      type: VizabiBubblemap,
+      placeholder: ".vzb-bubblemap",
+      model: marker,
+      name: "chart"
+    },{
+      type: TimeSlider,
+      placeholder: ".vzb-timeslider",
+      name: "time-slider",
+      model: marker
+    },{
+      type: SteppedSlider,
+      placeholder: ".vzb-speedslider",
+      name: "speed-slider",
+      model: marker
+    },{
+      type: TreeMenu,
+      placeholder: ".vzb-treemenu",
+      name: "tree-menu",
+      model: marker
+    },{
+      type: DataNotes,
+      placeholder: ".vzb-datanotes",
+      model: marker
+    },{
+      type: Dialogs,
+      placeholder: ".vzb-dialogs",
+      model: marker,
+      name: "dialogs"
+    },{
+      type: ButtonList,
+      placeholder: ".vzb-buttonlist",
+      name: "buttons",
+      model: marker
+    }];
 
-    //specifying components
-    this.components = [{
-      component,
-      placeholder: ".vzb-tool-viz",
-      model: ["state.time", "state.marker", "locale", "ui", "data"] //pass models to component
-    }, {
-      component: Vizabi.Component.get("timeslider"),
-      placeholder: ".vzb-tool-timeslider",
-      model: ["state.time", "state.marker", "ui"]
-    }, {
-      component: Vizabi.Component.get("dialogs"),
-      placeholder: ".vzb-tool-dialogs",
-      model: ["state", "ui", "locale"]
-    }, {
-      component: Vizabi.Component.get("buttonlist"),
-      placeholder: ".vzb-tool-buttonlist",
-      model: ["state", "ui", "locale"]
-    }, {
-      component: Vizabi.Component.get("treemenu"),
-      placeholder: ".vzb-tool-treemenu",
-      model: ["state.marker", "state.time", "locale", "ui"]
-    }, {
-      component: Vizabi.Component.get("datawarning"),
-      placeholder: ".vzb-tool-datawarning",
-      model: ["locale"]
-    }, {
-      component: Vizabi.Component.get("datanotes"),
-      placeholder: ".vzb-tool-datanotes",
-      model: ["state.marker", "locale"]
-    }, {
-      component: Vizabi.Component.get("steppedspeedslider"),
-      placeholder: ".vzb-tool-stepped-speed-slider",
-      model: ["state.time", "locale"]
-    }
-    ];
+    config.template = `
+      <div class="vzb-bubblemap"></div>
+      <div class="vzb-animationcontrols">
+        <div class="vzb-timeslider"></div>
+        <div class="vzb-speedslider"></div>
+      </div>
+      <div class="vzb-sidebar">
+        <div class="vzb-dialogs"></div>
+        <div class="vzb-buttonlist"></div>
+      </div>
+      <div class="vzb-treemenu"></div>
+      <div class="vzb-datanotes"></div>
+    `;
 
-    //constructor is the same as any tool
-    this._super(placeholder, external_model);
-  },
+    config.services = {
+      locale: new LocaleService(config.locale),
+      layout: new LayoutService({placeholder: config.placeholder})
+    };
 
-  default_model: {
-    state: {
-      time: {
-        "autoconfig": {
-          "type": "time"
-        }
-      },
-      entities: {
-        "autoconfig": {
-          "type": "entity_domain",
-          "excludeIDs": ["tag"]
-        }
-      },
-      entities_colorlegend: {
-        "autoconfig": {
-          "type": "entity_domain",
-          "excludeIDs": ["tag"]
-        }
-      },
-      marker: {
-        limit: 5000,
-        space: ["entities", "time"],
-        hook_lat: {
-          use: "property",
-          "autoconfig": {
-            index: 0,
-            type: "measure"
-          },
-          _important: true
-        },
-        hook_lng: {
-          use: "property",
-          "autoconfig": {
-            index: 1,
-            type: "measure"
-          },
-          _important: true
-        },
-        label: {
-          use: "property",
-          "autoconfig": {
-            "includeOnlyIDs": ["name"],
-            "type": "string"
-          }
-        },
-        size: {
-          "autoconfig": {
-              index: 2,
-              type: "measure"
-            }
-        },
-        color: {
-          syncModels: ["marker_colorlegend"],
-          "autoconfig": {}
-        }
-      },
-      "marker_colorlegend": {
-        "space": ["entities_colorlegend"],
-        "label": {
-          "use": "property",
-          "which": "name"
-        },
-        "hook_rank": {
-          "use": "property",
-          "which": "rank"
-        },
-        "hook_geoshape": {
-          "use": "property",
-          "which": "shape_lores_svg"
-        }
-      }
-    },
-    locale: { },
-    ui: {
-      map: {
-        path: null,
-        colorGeo: false,
-        preserveAspectRatio: true,
-        scale: 0.95,
-        offset: {
-          top: 0,
-          right: 0,
-          bottom: 0,
-          left: 0
-        },
-        projection: "robinson",
-        topology: {
-          path: null,
-          objects: {
-            geo: "land",
-            boundaries: "countries"
-          },
-          geoIdProperty: null,
-        }
-      },
-      chart: {
-        superhighlightOnMinimapHover: true,
-        labels: {
-          dragging: true,
-          enabled: true
-        }
-      },
-      datawarning: {
-        doubtDomain: [],
-        doubtRange: []
-      },
-      "buttons": ["colors", "find", "size", "moreoptions", "presentation", "sidebarcollapse", "fullscreen"],
-      "dialogs": {
-        "popup": ["colors", "find", "size", "moreoptions"],
-        "sidebar": ["colors", "find", "size"],
-        "moreoptions": ["opacity", "speed", "size", "colors", "presentation", "technical", "about"]
-      },
-      presentation: false
-    }
-  },
+    //register locale service in the marker model
+    config.model.config.markers.bubble.data.locale = observable({
+        get id() { return config.services.locale.id; }
+      });
 
-  versionInfo: VERSION_INFO
-});
-
-export default BubbleMap;
+    super(config);
+  }
+}
+BubbleMap.DEFAULT_UI = {
+  chart: {
+  }
+};
