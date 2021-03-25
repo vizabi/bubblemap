@@ -627,16 +627,6 @@ class _VizabiBubblemap extends BaseComponent {
   updateSize() {
     this.services.layout.size;
 
-    const {
-      minRadiusPx,
-      maxRadiusEm
-    } = this.profileConstants;
-
-    this.maxRadiusPx = Math.max(
-      minRadiusPx,
-      maxRadiusEm * utils.hypotenuse(this.width, this.height)
-    );
-
     this._year.setConditions({ 
       xAlign: "right", 
       yAlign: "top", 
@@ -655,22 +645,28 @@ class _VizabiBubblemap extends BaseComponent {
 
     const {
       minRadiusPx,
+      maxRadiusEm
     } = this.profileConstants;
 
-    const extent = this.MDL.size.extent || [0, 1];
-
     let minRadius = minRadiusPx;
-    let maxRadius = this.maxRadiusPx;
+    let maxRadius = Math.max(
+      minRadiusPx,
+      maxRadiusEm * utils.hypotenuse(this.width, this.height)
+    );
+
+    //transfer min max radius to size dialog via root ui observable (probably a cleaner way is possible)
+    this.root.ui.minMaxRadius = {min: minRadius, max: maxRadius};
+      
+    const extent = this.MDL.size.scale.extent || [0, 1];
 
     let minArea = utils.radiusToArea(Math.max(maxRadius * extent[0], minRadius));
     let maxArea = utils.radiusToArea(Math.max(maxRadius * extent[1], minRadius));
 
     let range = minArea === maxArea ? [minArea, maxArea] :
-      d3.range(minArea, maxArea, (maxArea - minArea) / this.sScale.domain().length).concat(maxArea);
+      d3.range(minArea, maxArea, (maxArea - minArea) / (this.sScale.domain().length - 1)).concat(maxArea);
 
     this.sScale.range(range);
   }
-
 
 
   _updateOpacity() {
