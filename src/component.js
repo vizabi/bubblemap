@@ -223,7 +223,7 @@ class _VizabiBubblemap extends BaseComponent {
   }
 
   _updateLayoutProfile(){
-    this.services.layout.width + this.services.layout.height;
+    this.services.layout.size;
 
     this.profileConstants = this.services.layout.getProfileConstants(PROFILE_CONSTANTS, PROFILE_CONSTANTS_FOR_PROJECTOR);
     this.height = (this.element.node().clientHeight) || 0;
@@ -301,7 +301,7 @@ class _VizabiBubblemap extends BaseComponent {
   }
 
   _rescaleMap() {
-    this.services.layout.width + this.services.layout.height;
+    this.services.layout.size;
 
     const offset = this.ui.map.offset;
     const {margin} = this.profileConstants;
@@ -510,7 +510,7 @@ class _VizabiBubblemap extends BaseComponent {
   }
 
   _drawData(duration) {
-    this.services.layout.width + this.services.layout.height;
+    this.services.layout.size;
     
     this._processFrameData();
     this._createAndDeleteBubbles();
@@ -625,7 +625,7 @@ class _VizabiBubblemap extends BaseComponent {
   }
 
   updateSize() {
-    this.services.layout.width + this.services.layout.height;
+    this.services.layout.size;
 
     const {
       minRadiusPx,
@@ -650,7 +650,7 @@ class _VizabiBubblemap extends BaseComponent {
 
   updateMarkerSizeLimits() {
     //this is very funny
-    this.services.layout.width + this.services.layout.height;
+    this.services.layout.size;
     this.MDL.size.scale.domain;
 
     const {
@@ -732,7 +732,7 @@ class _VizabiBubblemap extends BaseComponent {
       infoElMargin,
     } = this.profileConstants;
 
-    this.services.layout.width + this.services.layout.height;
+    this.services.layout.size;
 
     const sText = this.options.sTitle || 
       this.localise("buttons/size") + ": " + this.MDL.size.data.conceptProps.name;
