@@ -735,11 +735,11 @@ class _VizabiBubblemap extends BaseComponent {
     const cText = this.options.cTitle || 
       this.localise("buttons/color") + ": " + this.MDL.color.data.conceptProps.name;
 
-    this.treemenu = this.root.findChild({type: "TreeMenu"});
+    const treemenu = this.root.findChild({type: "TreeMenu"});
     const sTitle = this.DOM.sTitle
-      .classed("vzb-disabled", this.treemenu.state.ownReadiness !== Utils.STATUS.READY)
+      .classed("vzb-disabled", treemenu.state.ownReadiness !== Utils.STATUS.READY)
       .on("click", () => {
-        this.treemenu
+        treemenu
           .encoding("size")
           .alignX(this.services.locale.isRTL() ? "right" : "left")
           .alignY("top")
@@ -750,10 +750,10 @@ class _VizabiBubblemap extends BaseComponent {
       .text(sText);
 
     const cTitle = this.DOM.cTitle
-      .classed("vzb-disabled", this.treemenu.state.ownReadiness !== Utils.STATUS.READY)
+      .classed("vzb-disabled", treemenu.state.ownReadiness !== Utils.STATUS.READY)
       .classed("vzb-hidden", this.services.layout.profile == "LARGE")
       .on("click", () => {
-        this.treemenu
+        treemenu
           .encoding("color")
           .alignX(this.services.locale.isRTL() ? "right" : "left")
           .alignY("top")
