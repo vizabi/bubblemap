@@ -78,11 +78,6 @@ export default class BubbleMap extends BaseComponent {
       layout: new LayoutService(config.layout)
     };
 
-    //register locale service in the marker model
-    config.model.config.markers.bubble.data.locale = observable({
-      get id() { return config.services.locale.id; }
-    });
-
     super(config);
   }
 }
