@@ -19,6 +19,8 @@ const VERSION_INFO = { version: __VERSION, build: __BUILD };
 export default class BubbleMap extends BaseComponent {
 
   constructor(config){
+
+    Vizabi.utils.applyDefaults(config.model.markers.bubble.config, BubbleMap.DEFAULT_CORE);    
     const marker = config.model.markers.bubble.encoding.frame.splash.marker;
 
     config.name = "bubblemap";
@@ -83,5 +85,66 @@ export default class BubbleMap extends BaseComponent {
 }
 BubbleMap.DEFAULT_UI = {
   chart: {
+  }
+};
+BubbleMap.DEFAULT_CORE = {
+  requiredEncodings: ["lat", "lon", "size"],
+  encoding: {
+    "selected": {
+      modelType: "selection"
+    },
+    "highlighted": {
+      modelType: "selection"
+    },
+    "size": {
+      scale: {
+        modelType: "size",
+        allowedTypes: ["linear", "log", "genericLog", "pow"]
+      }
+    },
+    "lat": {
+      data: {
+        space: {},
+        concept: {
+          filter: { concept: { $in: ["latitude", "lat"] } }
+        }
+      }
+    },
+    "lon": {
+      data: {
+        space: {},
+        concept: {
+          filter: { concept: { $in: ["longitude", "lon", "lng"] } }
+        }
+      }
+    },
+    "color": {
+      scale: {
+        modelType: "color"
+      }
+    },
+    "label": {
+      data: {
+        modelType: "entityPropertyDataConfig"
+      }
+    },
+    "size_label": {
+      data: {
+        constant: "_default"
+      },
+      scale: {
+        modelType: "size"
+      }
+    },
+    "frame": {
+      modelType: "frame"
+    },
+    "order": {
+      modelType: "order",
+      data: {
+        ref: "markers.bubble.encoding.size.data",
+        direction: "desc"
+      }
+    },
   }
 };
