@@ -14,8 +14,6 @@ import {
 import { VizabiBubblemap } from "./component.js";
 import { observable } from "mobx";
 
-const VERSION_INFO = { version: __VERSION, build: __BUILD };
-
 export default class BubbleMap extends BaseComponent {
 
   constructor(config){
@@ -148,3 +146,5 @@ BubbleMap.DEFAULT_CORE = {
     },
   }
 };
+
+BubbleMap.versionInfo = { version: __VERSION, build: __BUILD };
