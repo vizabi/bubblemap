@@ -423,7 +423,10 @@ class _VizabiBubblemap extends BaseComponent {
         .on("click", this._interact().click);
     } else {
       this.bubbles
-        .on("tap", this._interact().tap);
+        .onTap((d, i) => {
+          d3.event.stopPropagation();
+          this._interact().click(d, i);
+        });
     }
   }
 
