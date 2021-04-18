@@ -12,7 +12,7 @@ import {decorate, computed} from "mobx";
 import topojson from "./topojson.js";
 import d3GeoProjection from "./d3.geoProjection.js";
 
-const {ICON_WARN, ICON_QUESTION} = Icons;
+const {ICON_QUESTION} = Icons;
 const COLOR_BLACKISH = "rgb(51, 51, 51)";
 const COLOR_WHITEISH = "rgb(253, 253, 253)";
 
@@ -95,16 +95,13 @@ class _VizabiBubblemap extends BaseComponent {
 
               <g class="vzb-bmc-axis-c-info vzb-noexport"></g>
 
-              <g class="vzb-data-warning vzb-noexport">
-                  <svg></svg>
-                  <text></text>
-              </g>
               <g class="vzb-bmc-lines"></g>
               <svg class="vzb-bmc-labels-crop">
-                <g class="vzb-bmc-labels"></g>
+              <g class="vzb-bmc-labels"></g>
               </svg>
           </g>
           <rect class="vzb-bmc-forecastoverlay vzb-hidden" x="0" y="0" width="100%" height="100%" fill="url(#vzb-bmc-pattern-lines)" pointer-events='none'></rect>
+          <g class="vzb-datawarning-button vzb-noexport"></g>
       </svg>
       <svg>
           <defs>
@@ -128,7 +125,6 @@ class _VizabiBubblemap extends BaseComponent {
       bubbleContainerCrop: this.element.select(".vzb-bmc-bubbles-crop"),
       bubbleContainer: this.element.select(".vzb-bmc-bubbles"),
       labelListContainer: this.element.select(".vzb-bmc-bubble-labels"),
-      dataWarning: this.element.select(".vzb-data-warning"),
   
       sTitle: this.element.select(".vzb-bmc-axis-s-title"),
       cTitle: this.element.select(".vzb-bmc-axis-c-title"),
@@ -179,8 +175,6 @@ class _VizabiBubblemap extends BaseComponent {
       this.addReaction(this._initMap);
       this.addReaction(this._rescaleMap);
       this.addReaction(this._drawHeader);
-
-      this.addReaction(this._drawForecastOverlay);
       
       this.addReaction(this._updateYear);
       //this.addReaction(this._drawHeader);
@@ -196,9 +190,7 @@ class _VizabiBubblemap extends BaseComponent {
       //this.addReaction(this._drawColors);
 
       this.addReaction(this._drawForecastOverlay);
-      this.addReaction(this._updateDataWarning);
       //this.addReaction(this._unselectBubblesWithNoData);
-      //this.addReaction(this._updateMissedPositionWarning);
     });
   }
 
@@ -632,6 +624,8 @@ class _VizabiBubblemap extends BaseComponent {
   updateSize() {
     this.services.layout.size;
 
+    const {margin} = this.profileConstants;
+
     this._year.setConditions({ 
       xAlign: "right", 
       yAlign: "top", 
@@ -641,6 +635,16 @@ class _VizabiBubblemap extends BaseComponent {
     this._year.resizeText(this.width, this.height);
     //this.repositionElements();
     //this.rescaleMap();
+
+    this.root.findChild({type: "_DataWarning"}).setOptions({
+      width: this.width,
+      height: this.height,
+      vertical: "bottom", 
+      horizontal: this.services.locale.isRTL() ? "left" : "right",
+      right: margin.right,
+      left: margin.left,
+      bottom: margin.bottom
+    });
   }
 
   updateMarkerSizeLimits() {
@@ -713,18 +717,6 @@ class _VizabiBubblemap extends BaseComponent {
       });
   }
 
-  _updateDataWarning(opacity) {
-    this.DOM.dataWarning.style("opacity",
-      1 || opacity || (
-        !this.MDL.selected.markers.size ?
-          this.wScale(this.MDL.frame.value.getUTCFullYear()) :
-          1
-      )
-    );
-  }
-
-
-
   _drawHeader() {
     const {
       margin,
@@ -766,25 +758,7 @@ class _VizabiBubblemap extends BaseComponent {
           .toggle();
       })
       .select("text")
-      .text(cText)
-
-    // utils.setIcon(this.dataWarningEl, ICON_WARN).select("svg").attr("width", "0px").attr("height", "0px");
-    // this.dataWarningEl.append("text")
-    //   .attr("text-anchor", "end")
-    //   .text(this.translator("hints/dataWarning"));
-
-    // this.dataWarningEl
-    //   .on("click", () => {
-    //     _this.parent.findChildByName("gapminder-datawarning").toggle();
-    //   })
-    //   .on("mouseover", () => {
-    //     _this.updateDoubtOpacity(1);
-    //   })
-    //   .on("mouseout", () => {
-    //     _this.updateDoubtOpacity();
-    //   });
-
-    
+      .text(cText)    
 
     const sTitleBBox = sTitle.node().getBBox();
 
@@ -1118,16 +1092,6 @@ class Old {
     this.cTitleEl.attr("transform", "translate(" + (isRTL ? this.width : 0) + "," + (margin.top + sTitleBB.height) + ")")
       .classed("vzb-hidden", this.getLayoutProfile() === "large" || this.model.marker.color.use == "constant");
 
-    const warnBB = this.dataWarningEl.select("text").node().getBBox();
-    this.dataWarningEl.select("svg")
-      .attr("width", warnBB.height * 0.75)
-      .attr("height", warnBB.height * 0.75)
-      .attr("x", -warnBB.width - warnBB.height * 1.2)
-      .attr("y", -warnBB.height * 0.65);
-
-    this.dataWarningEl
-      .attr("transform", "translate(" + (this.width) + "," + (this.height - warnBB.height * 0.5) + ")")
-      .select("text");
 
     if (this.sInfoEl.select("svg").node()) {
       const titleBBox = this.sTitleEl.node().getBBox();

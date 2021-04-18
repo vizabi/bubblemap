@@ -12,7 +12,6 @@ import {
   ButtonList
 } from "VizabiSharedComponents";
 import { VizabiBubblemap } from "./component.js";
-import { observable } from "mobx";
 
 export default class BubbleMap extends BaseComponent {
 
@@ -44,6 +43,12 @@ export default class BubbleMap extends BaseComponent {
       name: "tree-menu",
       model: marker
     },{
+      type: DataWarning,
+      placeholder: ".vzb-datawarning",
+      options: {button: ".vzb-datawarning-button"},
+      model: marker,
+      name: "data-warning"
+    },{
       type: DataNotes,
       placeholder: ".vzb-datanotes",
       model: marker
@@ -70,6 +75,7 @@ export default class BubbleMap extends BaseComponent {
         <div class="vzb-buttonlist"></div>
       </div>
       <div class="vzb-treemenu"></div>
+      <div class="vzb-datawarning"></div>
       <div class="vzb-datanotes"></div>
     `;
 
