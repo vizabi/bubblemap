@@ -390,8 +390,6 @@ class _VizabiBubblemap extends BaseComponent {
     return this.__dataProcessed = this.model.dataArray
       .concat()
       .map(this.getValue)
-      //TODO sorting can be done via order encoding
-      .sort((a, b) => b.size - a.size);
   }
 
   _createAndDeleteBubbles() {
@@ -406,7 +404,8 @@ class _VizabiBubblemap extends BaseComponent {
     this.bubbles = this.bubbles.enter().append("circle")
       .attr("class", "vzb-bmc-bubble")
       .attr("id", (d) => `vzb-br-bar-${d[Symbol.for("key")]}-${this.id}`)
-      .merge(this.bubbles);
+      .merge(this.bubbles)
+      .order();
 
     if(!utils.isTouchDevice()){
       this.bubbles
