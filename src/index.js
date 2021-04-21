@@ -17,8 +17,11 @@ export default class BubbleMap extends BaseComponent {
 
   constructor(config){
 
-    Vizabi.utils.applyDefaults(config.model.markers.bubble.config, BubbleMap.DEFAULT_CORE);    
-    const marker = config.model.markers.bubble.encoding.frame.splash.marker;
+    const fullMarker = config.model.markers.bubble;
+    Vizabi.utils.applyDefaults(fullMarker.config, BubbleMap.DEFAULT_CORE);  
+      
+    const frameType = Vizabi.stores.encodings.modelTypes.frame;
+    const { marker, splashMarker } = frameType.splashMarker(fullMarker);
 
     config.name = "bubblemap";
 
@@ -85,6 +88,7 @@ export default class BubbleMap extends BaseComponent {
     };
 
     super(config);
+    this.splashMarker = splashMarker;
   }
 }
 BubbleMap.DEFAULT_UI = {
