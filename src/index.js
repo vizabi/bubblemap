@@ -9,7 +9,8 @@ import {
   TreeMenu,
   SteppedSlider,
   Dialogs,
-  ButtonList
+  ButtonList,
+  versionInfo
 } from "VizabiSharedComponents";
 import { VizabiBubblemap } from "./component.js";
 
@@ -157,4 +158,4 @@ BubbleMap.DEFAULT_CORE = {
   }
 };
 
-BubbleMap.versionInfo = { version: __VERSION, build: __BUILD };
+BubbleMap.versionInfo = { version: __VERSION, build: __BUILD, package: __PACKAGE_JSON_FIELDS, sharedComponents: versionInfo};
