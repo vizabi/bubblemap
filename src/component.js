@@ -7,7 +7,7 @@ import {
   DynamicBackground
 } from "VizabiSharedComponents";
 
-import {decorate, computed} from "mobx";
+import {decorate, computed, observable, action} from "mobx";
 
 import topojson from "./topojson.js";
 import d3GeoProjection from "./d3.geoProjection.js";
@@ -135,7 +135,26 @@ class _VizabiBubblemap extends BaseComponent {
 
     
     d3GeoProjection();
-    
+
+    // http://bl.ocks.org/mbostock/d4021aa4dccfd65edffd patterson
+    // http://bl.ocks.org/mbostock/3710566 robinson
+    // map background
+
+    if(!d3[this.ui.map.projection]) return utils.warn(`Projection ${this.ui.map.projection} is not available in d3`);
+
+    // project to bounding box https://bl.ocks.org/mbostock/4707858
+    this.projection = d3[this.ui.map.projection]()
+      .scale(1)
+      .translate([0, 0]);
+
+    //guess map bounds (hardcoded for gapminder bubble map world-50m.json)
+    this.mapBounds = [
+      [-3.0365722270964945, -1.4899523584310421],
+      [3.049764882149918, 1.5707963267948966]
+    ];
+    this.preload().then(()=>{
+      this._initMap();
+    });
     this._labels = this.findChild({type: "Labels"});
     this._year = this.findChild({type: "DynamicBackground"});
   }
@@ -159,19 +178,14 @@ class _VizabiBubblemap extends BaseComponent {
     this.cScale = color => color? this.MDL.color.scale.d3Scale(color) : COLOR_WHITEISH;
 
     if (this._updateLayoutProfile()) return; //return if exists with error
-
-    this.preload().then(()=>{
-      this.addReaction(this.updateSize);
-      this.addReaction(this._initMap);
-      this.addReaction(this._rescaleMap);
-      this.addReaction(this._drawHeader);
-      this.addReaction(this._updateYear);
-
-      this.addReaction(this._drawData);
-      this.addReaction(this._updateOpacity);
-
-      this.addReaction(this._drawForecastOverlay);
-    });
+    
+    this.addReaction(this.updateSize);    
+    this.addReaction(this._rescaleMap);
+    this.addReaction(this._drawHeader);
+    this.addReaction(this._updateYear);
+    this.addReaction(this._drawData);
+    this.addReaction(this._updateOpacity);
+    this.addReaction(this._drawForecastOverlay);
   }
 
   _getDuration() {
@@ -235,14 +249,7 @@ class _VizabiBubblemap extends BaseComponent {
   _initMap() {
     if (!this.topology) utils.warn("Bubble map is missing the map data:", this.topology);
 
-    // http://bl.ocks.org/mbostock/d4021aa4dccfd65edffd patterson
-    // http://bl.ocks.org/mbostock/3710566 robinson
-    // map background
-
-    if(!d3[this.ui.map.projection]) return utils.warn(`Projection ${this.ui.map.projection} is not available in d3`);
-
-    // project to bounding box https://bl.ocks.org/mbostock/4707858
-    this.projection = d3[this.ui.map.projection]()
+    this.projection
       .scale(1)
       .translate([0, 0]);
 
@@ -784,5 +791,8 @@ _VizabiBubblemap.DEFAULT_UI = {
 
 //export default BubbleChart;
 export const VizabiBubblemap = decorate(_VizabiBubblemap, {
-  "MDL": computed
+  "MDL": computed,
+  "mapBounds": observable,
+  "skew": observable,
+  "_initMap": action
 });
