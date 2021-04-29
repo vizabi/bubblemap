@@ -133,12 +133,6 @@ class _VizabiBubblemap extends BaseComponent {
       forecastOverlay: this.element.select(".vzb-bmc-forecastoverlay")
     };
 
-    this.wScale = d3.scaleLinear()
-      .domain(this.ui.datawarning.doubtDomain)
-      .range(this.ui.datawarning.doubtRange);
-
-    this.isMobile = utils.isMobileOrTablet();
-    
     
     d3GeoProjection();
     
@@ -164,33 +158,19 @@ class _VizabiBubblemap extends BaseComponent {
     this.sScale = this.MDL.size.scale.d3Scale;
     this.cScale = color => color? this.MDL.color.scale.d3Scale(color) : COLOR_WHITEISH;
 
-    this.TIMEDIM = this.MDL.frame.data.concept;
-    this.KEYS = this.model.data.space.filter(dim => dim !== this.TIMEDIM);
-
     if (this._updateLayoutProfile()) return; //return if exists with error
 
     this.preload().then(()=>{
       this.addReaction(this.updateSize);
-
       this.addReaction(this._initMap);
       this.addReaction(this._rescaleMap);
       this.addReaction(this._drawHeader);
-      
       this.addReaction(this._updateYear);
-      //this.addReaction(this._drawHeader);
-      //this.addReaction(this._drawInfoEl);
-      //this.addReaction(this._drawFooter);
-      //this.addReaction(this._getWidestLabelWidth);
 
-      //this.addReaction(this.updateMarkerSizeLimits); // part of draw data now
       this.addReaction(this._drawData);
       this.addReaction(this._updateOpacity);
-      //this.addReaction(this._resizeSvg);
-      //this.addReaction(this._scroll);
-      //this.addReaction(this._drawColors);
 
       this.addReaction(this._drawForecastOverlay);
-      //this.addReaction(this._unselectBubblesWithNoData);
     });
   }
 
@@ -488,21 +468,16 @@ class _VizabiBubblemap extends BaseComponent {
     } else {
       this._labels.setTooltip();
     }
-
-    //TODO why divide by width and height? why do it here and not in labels comp?
-    // this._labels.setTooltip({
-    //   d: d,
-    //   text: d.label + ": " + this.localise(d.size),
-    //   centerX: (d.center[0] || mouse[0]) / this.width,
-    //   centerY: (d.center[1] || mouse[1]) / this.height,
-    //   offset: d.r || 0,
-    //   size: d.size_label,
-    //   color: this.cScale(d.color)
-    // });
   }
 
   __labelWithoutFrame(d) {
-    return this.KEYS.map(dim => this.localise(d.label[dim])).join(' ');
+    if (typeof d.label == "object") 
+      return Object.entries(d.label)
+        .filter(entry => entry[0] != this.MDL.frame.data.concept)
+        .map(entry => entry[1])
+        .join(", ");
+    if (d.label != null) return "" + d.label;
+    return d[Symbol.for("key")];
   }
 
   _drawData(duration) {
@@ -540,62 +515,6 @@ class _VizabiBubblemap extends BaseComponent {
       }
 
       _this._updateLabel(d, duration);
-
-      // d.hidden_1 = d.hidden;
-      // d.hidden = (!valueS && valueS !== 0) || valueX == null || valueY == null;
-      // if(d.hidden) nulls++;
-      // const showhide = d.hidden !== d.hidden_1;
-
-      // if (d.hidden) {
-      //   if (showhide) {
-      //     if (duration) {
-      //       view.transition().duration(duration).ease(d3.easeLinear)
-      //         .style("opacity", 0)
-      //         .on("end", () => view.classed("vzb-hidden", d.hidden).style("opacity", _this.ui.opacityRegular));
-      //     } else {
-      //       view.classed("vzb-hidden", d.hidden);
-      //     }
-      //   }
-      //   //_this._updateLabel(d, duration);
-      // } else {
-
-      //   d.r = utils.areaToRadius(_this.sScale(valueS || 0));
-
-      //   view.attr("fill", valueC != null ? _this.cScale(valueC) : _this.COLOR_WHITEISH);
-
-      //   if (_this.ui.map.colorGeo)
-      //     geo.style("fill", valueC != null ? _this.cScale(valueC) : "#999");
-
-      //   if (reposition) {
-      //     d.center = _this.skew(_this.projection([valueX || 0, valueY || 0]));
-
-      //     view.attr("cx", d.center[0])
-      //       .attr("cy", d.center[1]); 
-      //   }
-
-      //   if (duration) {
-      //     if (showhide) {
-      //       const opacity = view.style("opacity");
-      //       view.classed("vzb-hidden", d.hidden);
-      //       view.style("opacity", 0)
-      //         .attr("r", d.r)
-      //         .transition().duration(duration).ease(d3.easeExp)
-      //         .style("opacity", opacity);
-            
-      //     } else {
-      //       view.transition().duration(duration).ease(d3.easeLinear)
-      //         .attr("r", d.r);
-      //     }
-      //   } else {
-      //     view.interrupt()
-      //       .attr("r", d.r)
-      //       .transition();
-
-      //     if (showhide) view.classed("vzb-hidden", d.hidden);
-      //   }
-
-      //   //_this._updateLabel(d, duration);
-      // }
     });
 
   }
@@ -867,319 +786,3 @@ _VizabiBubblemap.DEFAULT_UI = {
 export const VizabiBubblemap = decorate(_VizabiBubblemap, {
   "MDL": computed
 });
-
-// this.model_binds = {
-//   "change:time.value": function(evt) {
-//     if (!_this._readyOnce) return;
-//     _this.model.marker.getFrame(_this.model.time.value, _this.frameChanged.bind(_this));
-//   },
-//   "change:marker.highlight": function(evt) {
-//     if (!_this._readyOnce) return;
-//     _this.highlightMarkers();
-//     _this.updateOpacity();
-//   },
-//   "change:marker": function(evt, path) {
-//     // bubble size change is processed separately
-//     if (!_this._readyOnce) return;
-//     if (path.indexOf("scaleType") > -1) {
-//       _this.ready();
-//     }
-//   },
-//   "change:ui.chart.showForecastOverlay": function(evt) {
-//     if (!_this._readyOnce) return;
-//     _this._updateForecastOverlay();
-//   },
-//   "change:marker.size.extent": function(evt, path) {
-//     //console.log("EVENT change:marker:size:max");
-//     if (!_this._readyOnce || !_this.entityBubbles) return;
-//     _this.updateMarkerSizeLimits();
-//     _this.redrawDataPoints(null, false);
-//   },
-//   "change:marker.color.palette": function(evt, path) {
-//     if (!_this._readyOnce) return;
-//     _this.redrawDataPoints(null, false);
-//   },
-//   "change:marker.select": function(evt) {
-//     if (!_this._readyOnce) return;
-//     _this.selectMarkers();
-//     _this.redrawDataPoints(null, false);
-//     _this.updateOpacity();
-//     _this.updateDoubtOpacity();
-//   },
-//   "change:marker.opacitySelectDim": function(evt) {
-//     _this.updateOpacity();
-//   },
-//   "change:marker.opacityRegular": function(evt) {
-//     _this.updateOpacity();
-//   },
-//   "change:marker.superHighlight": () => this._readyOnce && this._blinkSuperHighlighted(),
-// };
-
-//this._selectlist = new Selectlist(this);
-
-
-class Old {
-
-  readyOnce() {
-
-
-    this.entityBubbles = null;
-
-    // year background
-    this.yearEl = this.element.select(".vzb-bmc-year");
-    this.year = new DynamicBackground(this.yearEl);
-    this.year.setConditions({ xAlign: "center", yAlign: "bottom" });
-
-    const _this = this;
-    this.on("resize", () => {
-      //return if updatesize exists with error
-      if (_this.updateSize()) return;
-      _this.updateMarkerSizeLimits();
-      _this._labels.updateSize();
-      _this.redrawDataPoints();
-      //_this._selectlist.redraw();
-
-    });
-
-    this.initMap();
-
-    this.TIMEDIM = this.model.time.getDimension();
-    this.KEYS = utils.unique(this.model.marker._getAllDimensions({ exceptType: "time" }));
-    this.KEY = this.KEYS.join(",");
-    this.dataKeys = this.model.marker.getDataKeysPerHook();
-    this.labelNames = this.model.marker.getLabelHookNames();
-
-    this.updateUIStrings();
-
-    this.wScale = d3.scaleLinear()
-      .domain(this.model.ui.datawarning.doubtDomain)
-      .range(this.model.ui.datawarning.doubtRange);
-
-    this._labels.readyOnce();
-  }
-
-  ready() {
-    const _this = this;
-    this.KEYS = utils.unique(this.model.marker._getAllDimensions({ exceptType: "time" }));
-    this.KEY = this.KEYS.join(",");
-    this.dataKeys = this.model.marker.getDataKeysPerHook();
-    this.labelNames = this.model.marker.getLabelHookNames();
-
-    this.updateUIStrings();
-    this.updateIndicators();
-    this.updateSize();
-    this.updateMarkerSizeLimits();
-    this.model.marker.getFrame(this.model.time.value, (values, time) => {
-      // TODO: temporary fix for case when after data loading time changed on validation
-      if (time.toString() != _this.model.time.value.toString()) {
-        utils.defer(() => {
-          _this.ready();
-        });
-        return;
-      } // frame is outdated
-
-      if (!values) return;
-      _this.values = values;
-      _this.updateEntities();
-      _this.updateTime();
-      _this._labels.ready();
-      _this.redrawDataPoints();
-      _this.highlightMarkers();
-      _this.selectMarkers();
-      //this._selectlist.redraw();
-      _this.updateDoubtOpacity();
-      _this.updateOpacity();
-    });
-
-  }
-
-
-  updateTitleNumbers() {
-    const _this = this;
-
-    let mobile; // if is mobile device and only one bubble is selected, update the stitle for the bubble
-    if (_this.isMobile && _this.model.marker.select && _this.model.marker.select.length === 1) {
-      mobile = _this.model.marker.select[0];
-    }
-
-    if (_this.hovered || mobile) {
-      const conceptPropsS = _this.model.marker.size.getConceptprops();
-      const conceptPropsC = _this.model.marker.color.getConceptprops();
-
-      const hovered = _this.hovered || mobile;
-      const formatterS = _this.model.marker.size.getTickFormatter();
-      const formatterC = _this.model.marker.color.getTickFormatter();
-
-      const unitS = conceptPropsS.unit || "";
-      const unitC = conceptPropsC.unit || "";
-
-      const valueS = _this.values.size[utils.getKey(hovered, this.dataKeys.size)];
-      let valueC = _this.values.color[utils.getKey(hovered, this.dataKeys.color)];
-
-      //resolve value for color from the color legend model
-      if (_this.model.marker.color.isDiscrete() && valueC) {
-        valueC = this.model.marker.color.getColorlegendMarker().label.getItems()[valueC] || "";
-      }
-
-      _this.sTitleEl.select("text")
-        .text(_this.translator("buttons/size") + ": " + formatterS(valueS) + " " + unitS);
-
-      _this.cTitleEl.select("text")
-        .text(_this.translator("buttons/color") + ": " +
-          (valueC || valueC === 0 ? formatterC(valueC) + " " + unitC : _this.translator("hints/nodata")));
-
-      this.sInfoEl.classed("vzb-hidden", true);
-      this.cInfoEl.classed("vzb-hidden", true);
-    } else {
-      this.sTitleEl.select("text")
-        .text(this.translator("buttons/size") + ": " + this.strings.title.S);
-      this.cTitleEl.select("text")
-        .text(this.translator("buttons/color") + ": " + this.strings.title.C);
-
-      this.sInfoEl.classed("vzb-hidden", false);
-      this.cInfoEl.classed("vzb-hidden", false || this.cTitleEl.classed("vzb-hidden"));
-    }
-  }
-
-  fitSizeOfTitles() {
-    // reset font sizes first to make the measurement consistent
-    const sTitleText = this.sTitleEl.select("text");
-    sTitleText.style("font-size", null);
-
-    const cTitleText = this.cTitleEl.select("text");
-    cTitleText.style("font-size", null);
-
-    const sTitleBB = sTitleText.node().getBBox();
-    const cTitleBB = this.cTitleEl.classed("vzb-hidden") ? sTitleBB : cTitleText.node().getBBox();
-
-    const font =
-      Math.max(parseInt(sTitleText.style("font-size")), parseInt(cTitleText.style("font-size")))
-      * this.width / Math.max(sTitleBB.width, cTitleBB.width);
-
-    if (Math.max(sTitleBB.width, cTitleBB.width) > this.width) {
-      sTitleText.style("font-size", font + "px");
-      cTitleText.style("font-size", font + "px");
-    } else {
-
-      // Else - reset the font size to default so it won't get stuck
-      sTitleText.style("font-size", null);
-      cTitleText.style("font-size", null);
-    }
-
-  }
-
-  repositionElements() {
-
-    const margin = this.activeProfile.margin;
-    const infoElHeight = this.activeProfile.infoElHeight;
-    const isRTL = this.model.locale.isRTL();
-
-    
-
-    this.year.setConditions({
-      widthRatio: 3 / 10
-    });
-    this.year.resize(this.width, this.height);
-
-    this.sTitleEl
-      .style("font-size", infoElHeight)
-      .attr("transform", "translate(" + (isRTL ? this.width : 0) + "," + margin.top + ")");
-
-    const sTitleBB = this.sTitleEl.select("text").node().getBBox();
-
-    //hide the second line about color in large profile or when color is constant
-    this.cTitleEl.attr("transform", "translate(" + (isRTL ? this.width : 0) + "," + (margin.top + sTitleBB.height) + ")")
-      .classed("vzb-hidden", this.getLayoutProfile() === "large" || this.model.marker.color.use == "constant");
-
-
-    if (this.sInfoEl.select("svg").node()) {
-      const titleBBox = this.sTitleEl.node().getBBox();
-      const t = utils.transform(this.sTitleEl.node());
-      const hTranslate = isRTL ? (titleBBox.x + t.translateX - infoElHeight * 1.4) : (titleBBox.x + t.translateX + titleBBox.width + infoElHeight * 0.4);
-
-      this.sInfoEl.select("svg")
-        .attr("width", infoElHeight)
-        .attr("height", infoElHeight);
-      this.sInfoEl.attr("transform", "translate("
-        + hTranslate + ","
-        + (t.translateY - infoElHeight * 0.8) + ")");
-    }
-
-    this.cInfoEl.classed("vzb-hidden", this.cTitleEl.classed("vzb-hidden"));
-
-    if (!this.cInfoEl.classed("vzb-hidden") && this.cInfoEl.select("svg").node()) {
-      const titleBBox = this.cTitleEl.node().getBBox();
-      const t = utils.transform(this.cTitleEl.node());
-      const hTranslate = isRTL ? (titleBBox.x + t.translateX - infoElHeight * 1.4) : (titleBBox.x + t.translateX + titleBBox.width + infoElHeight * 0.4);
-
-      this.cInfoEl.select("svg")
-        .attr("width", infoElHeight)
-        .attr("height", infoElHeight);
-      this.cInfoEl.attr("transform", "translate("
-        + hTranslate + ","
-        + (t.translateY - infoElHeight * 0.8) + ")");
-    }
-  }
-
-
-
-  _blinkSuperHighlighted() {
-    this.entityBubbles
-      .classed("vzb-super-highlighted", d => this.model.marker.isSuperHighlighted(d));
-  }
-
-  highlightMarkers() {
-    const _this = this;
-    this.someHighlighted = (this.model.marker.highlight.length > 0);
-
-    if (utils.isTouchDevice()) {
-      if (this.someHighlighted) {
-        _this.hovered = this.model.marker.highlight[0];
-      } else {
-        _this.hovered = null;
-      }
-      _this.updateTitleNumbers();
-      _this.fitSizeOfTitles();
-    }
-  }
-
-  selectMarkers() {
-    const someHighlighted = this.MDL.highlighted.markers.size > 0;
-    const someSelected = this.MDL.selected.markers.size > 0;
-
-    if (utils.isTouchDevice()) {
-      this._labels.showCloseCross(null, false);
-      if (someHighlighted) {
-        this.model.marker.clearHighlighted();
-      } else {
-        this.updateTitleNumbers();
-        this.fitSizeOfTitles();
-      }
-    } else {
-      // hide recent hover tooltip
-      if (!this.hovered || this.model.marker.isSelected(this.hovered)) {
-        this._labels.clearTooltip();
-      }
-    }
-
-  }
-
-    //      if (!this.selectList || !this.someSelected) return;
-    //      this.selectList.classed("vzb-highlight", function (d) {
-    //          return _this.model.entities.isHighlighted(d);
-    //      });
-    //      this.selectList.each(function (d, i) {
-    //        d3.select(this).selectAll(".vzb-bmc-label-x")
-    //          .classed("vzb-invisible", function(n) {
-    //            return !_this.model.entities.isHighlighted(d);
-    //          });
-    //
-    //      });
-
-  
-
-
-
-}
-
-
