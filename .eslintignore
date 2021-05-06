@@ -1,2 +1,4 @@
 *.scss
 *.css
+d3.geoProjection.js
+topojson.js

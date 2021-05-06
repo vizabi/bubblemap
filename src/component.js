@@ -13,7 +13,6 @@ import topojson from "./topojson.js";
 import d3GeoProjection from "./d3.geoProjection.js";
 
 const {ICON_QUESTION} = Icons;
-const COLOR_BLACKISH = "rgb(51, 51, 51)";
 const COLOR_WHITEISH = "rgb(253, 253, 253)";
 
 const PROFILE_CONSTANTS = {
@@ -222,8 +221,6 @@ class _VizabiBubblemap extends BaseComponent {
 
 
   preload() {
-    const _this = this;
-
     if (this.topology) return Promise.resolve();
 
     const reader = this.model.data.source.reader;
@@ -237,11 +234,16 @@ class _VizabiBubblemap extends BaseComponent {
 
     return new Promise((resolve, reject) => {
       if (topoPath) {
-        reader.getAsset(topoPath).then(function(response){
-          _this.topology = response;
-          resolve();
-        });
+        reader.getAsset(topoPath)
+          .then(response => {
+            this.topology = response;
+            resolve();
+          })
+          .catch(e => {
+            reject(new Error("unable to fetch the map"));
+          });
       } else {
+        reject(new Error("topoPath is not set"));
       }
     });
   }

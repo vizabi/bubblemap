@@ -10,6 +10,7 @@ import {
   SteppedSlider,
   Dialogs,
   ButtonList,
+  CapitalVizabiService,
   versionInfo
 } from "VizabiSharedComponents";
 import { VizabiBubblemap } from "./component.js";
@@ -19,9 +20,9 @@ export default class BubbleMap extends BaseComponent {
   constructor(config){
 
     const fullMarker = config.model.markers.bubble;
-    Vizabi.utils.applyDefaults(fullMarker.config, BubbleMap.DEFAULT_CORE);  
+    config.Vizabi.utils.applyDefaults(fullMarker.config, BubbleMap.DEFAULT_CORE);  
       
-    const frameType = Vizabi.stores.encodings.modelTypes.frame;
+    const frameType = config.Vizabi.stores.encodings.modelTypes.frame;
     const { marker, splashMarker } = frameType.splashMarker(fullMarker);
 
     config.name = "bubblemap";
@@ -84,6 +85,7 @@ export default class BubbleMap extends BaseComponent {
     `;
 
     config.services = {
+      Vizabi: new CapitalVizabiService({Vizabi: config.Vizabi}),
       locale: new LocaleService(config.locale),
       layout: new LayoutService(config.layout)
     };
