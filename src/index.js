@@ -11,6 +11,7 @@ import {
   Dialogs,
   ButtonList,
   CapitalVizabiService,
+  Repeater,
   versionInfo
 } from "VizabiSharedComponents";
 import { VizabiBubblemap } from "./component.js";
@@ -28,10 +29,14 @@ export default class BubbleMap extends BaseComponent {
     config.name = "bubblemap";
 
     config.subcomponents = [{
-      type: VizabiBubblemap,
-      placeholder: ".vzb-bubblemap",
+      type: Repeater,
+      placeholder: ".vzb-repeater",
       model: marker,
-      name: "chart"
+      options: {
+        ComponentClass: VizabiBubblemap,
+        componentCssName: "vzb-bubblemap"
+      },
+      name: "chart",
     },{
       type: TimeSlider,
       placeholder: ".vzb-timeslider",
@@ -70,7 +75,7 @@ export default class BubbleMap extends BaseComponent {
     }];
 
     config.template = `
-      <div class="vzb-bubblemap"></div>
+      <div class="vzb-repeater vzb-bubblemap"></div>
       <div class="vzb-animationcontrols">
         <div class="vzb-timeslider"></div>
         <div class="vzb-speedslider"></div>
@@ -157,6 +162,10 @@ BubbleMap.DEFAULT_CORE = {
         direction: "desc"
       }
     },
+    "repeat": {
+      modelType: "repeat",
+      allowEnc: ["size"]
+    }
   }
 };
 

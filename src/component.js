@@ -163,7 +163,7 @@ class _VizabiBubblemap extends BaseComponent {
       frame: this.model.encoding.frame,
       selected: this.model.encoding.selected,
       highlighted: this.model.encoding.highlighted,
-      size: this.model.encoding.size,
+      size: this.model.encoding[this.state.alias.size || "size"],
       color: this.model.encoding.color,
       label: this.model.encoding.label
     };
@@ -202,10 +202,10 @@ class _VizabiBubblemap extends BaseComponent {
 
   _drawForecastOverlay() {
     this.DOM.forecastOverlay.classed("vzb-hidden", 
-    !this.ui.showForecast || 
-    !this.ui.showForecastOverlay || 
-    !this.ui.endBeforeForecast || 
-      (this.MDL.frame.value <= this.MDL.frame.parseValue(this.ui.endBeforeForecast))
+      !this.ui.showForecast || 
+      !this.ui.showForecastOverlay || 
+      !this.ui.endBeforeForecast || 
+        (this.MDL.frame.value <= this.MDL.frame.parseValue(this.ui.endBeforeForecast))
     );
   }
 
@@ -466,7 +466,7 @@ class _VizabiBubblemap extends BaseComponent {
       const y = d.center[1] || mouse[1];
       const offset = d.r || 0;
 
-      labelValues.valueS = d.size;
+      labelValues.valueS = d[this._alias("size")];
       labelValues.labelText = this.__labelWithoutFrame(d);
       tooltipCache.labelX0 = labelValues.valueX = x / this.width;
       tooltipCache.labelY0 = labelValues.valueY = y / this.height;
@@ -503,9 +503,10 @@ class _VizabiBubblemap extends BaseComponent {
     this.bubbles.each(function(d) {
       const view = d3.select(this);
 
-      d.hidden = (!d.size && d.size !== 0) || d.lon == null || d.lat == null;
+      const sValue = d[_this._alias("size")];
+      d.hidden = (!sValue && sValue !== 0) || d.lon == null || d.lat == null;
 
-      d.r = utils.areaToRadius(_this.sScale(d.size)||0);
+      d.r = utils.areaToRadius(_this.sScale(sValue)||0);
       d.center = _this.skew(_this.projection([d.lon || 0, d.lat || 0]));
 
       view
@@ -537,14 +538,15 @@ class _VizabiBubblemap extends BaseComponent {
 
       const showhide = d.hidden !== d.hidden_1;
       const valueLST = null;
+      const sValue = d[this._alias("size")];
       const cache = {
         labelX0: d.center[0] / this.width,
         labelY0: d.center[1] / this.height,
-        scaledS0: d.size ? utils.areaToRadius(this.sScale(d.size)) : null,
+        scaledS0: sValue ? utils.areaToRadius(this.sScale(sValue)) : null,
         scaledC0: this.cScale(d.color)
       };
 
-      this._labels.updateLabel(d, cache, d.center[0] / this.width, d.center[1] / this.height, d.size, d.color, this.__labelWithoutFrame(d), valueLST, duration, showhide);
+      this._labels.updateLabel(d, cache, d.center[0] / this.width, d.center[1] / this.height, sValue, d.color, this.__labelWithoutFrame(d), valueLST, duration, showhide);
     }
   }
 
@@ -640,7 +642,8 @@ class _VizabiBubblemap extends BaseComponent {
     const _this = this;
     if (this.MDL.selected.markers.size > 0)
       this.bubbles.each((d)=>{
-        if (!d.size && d.size !== 0) _this.MDL.selected.delete(d);
+        const sValue = d[_this._alias("size")];
+        if (!sValue && sValue !== 0) _this.MDL.selected.delete(d);
       });
   }
 
@@ -664,7 +667,7 @@ class _VizabiBubblemap extends BaseComponent {
       .classed("vzb-disabled", treemenu.state.ownReadiness !== Utils.STATUS.READY)
       .on("click", () => {
         treemenu
-          .encoding("size")
+          .encoding(this._alias("size"))
           .alignX(this.services.locale.isRTL() ? "right" : "left")
           .alignY("top")
           .updateView()
@@ -678,7 +681,7 @@ class _VizabiBubblemap extends BaseComponent {
       .classed("vzb-hidden", this.services.layout.profile == "LARGE")
       .on("click", () => {
         treemenu
-          .encoding("color")
+          .encoding(this._alias("color"))
           .alignX(this.services.locale.isRTL() ? "right" : "left")
           .alignY("top")
           .updateView()
@@ -741,6 +744,10 @@ class _VizabiBubblemap extends BaseComponent {
       .classed("vzb-hidden", 
         !conceptProps.description && !conceptProps.sourceLink || titleElement.classed("vzb-hidden")
       );
+  }
+
+  _alias(enc) {
+    return this.state.alias[enc] || enc;
   }
 
 }
