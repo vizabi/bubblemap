@@ -25,6 +25,7 @@ export default class BubbleMap extends BaseComponent {
       
     const frameType = config.Vizabi.stores.encodings.modelTypes.frame;
     const { marker, splashMarker } = frameType.splashMarker(fullMarker);
+    config.model.markers.bubble = marker;
 
     config.name = "bubblemap";
 
