@@ -239,7 +239,7 @@ class _VizabiBubblemap extends BaseComponent {
             this.topology = response;
             resolve();
           })
-          .catch(e => {
+          .catch(() => {
             reject(new Error("unable to fetch the map"));
           });
       } else {
@@ -378,7 +378,7 @@ class _VizabiBubblemap extends BaseComponent {
   _processFrameData() {
     return this.__dataProcessed = this.model.dataArray
       .concat()
-      .map(this.getValue)
+      .map(this.getValue);
   }
 
   _createAndDeleteBubbles() {
@@ -608,7 +608,6 @@ class _VizabiBubblemap extends BaseComponent {
 
 
   _updateOpacity() {
-    const _this = this;
     this.MDL.frame.value; //listen
 
     const {
@@ -649,7 +648,6 @@ class _VizabiBubblemap extends BaseComponent {
 
   _drawHeader() {
     const {
-      margin,
       headerMargin,
       infoElHeight,
       infoElMargin,
@@ -688,7 +686,7 @@ class _VizabiBubblemap extends BaseComponent {
           .toggle();
       })
       .select("text")
-      .text(cText)    
+      .text(cText);
 
     const sTitleBBox = sTitle.node().getBBox();
 
