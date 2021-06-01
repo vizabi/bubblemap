@@ -656,9 +656,9 @@ class _VizabiBubblemap extends BaseComponent {
     this.services.layout.size;
 
     const sText = this.options.sTitle || 
-      this.localise("buttons/size") + ": " + this.MDL.size.data.conceptProps.name;
+      this.localise("buttons/size") + ": " + (this.MDL.size.data.isConstant ? this.localise("indicator/_default/color") : this.MDL.size.data.conceptProps.name);
     const cText = this.options.cTitle || 
-      this.localise("buttons/color") + ": " + this.MDL.color.data.conceptProps.name;
+      this.localise("buttons/color") + ": " + (this.MDL.color.data.isConstant ? this.localise("indicator/_default/color") : this.MDL.color.data.conceptProps.name);
 
     const treemenu = this.root.findChild({type: "TreeMenu"});
     const sTitle = this.DOM.sTitle
@@ -740,7 +740,7 @@ class _VizabiBubblemap extends BaseComponent {
       .select("svg")
       .attr("width", infoElHeight + "px").attr("height", infoElHeight + "px")
       .classed("vzb-hidden", 
-        !conceptProps.description && !conceptProps.sourceLink || titleElement.classed("vzb-hidden")
+        model.data.isConstant || !conceptProps.description && !conceptProps.sourceLink || titleElement.classed("vzb-hidden")
       );
   }
 
