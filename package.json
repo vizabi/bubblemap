@@ -1,6 +1,6 @@
 {
   "name": "vizabi-bubblemap",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "description": "Vizabi bubble map",
   "scripts": {
     "prepublishOnly": "npm run build",

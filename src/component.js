@@ -15,14 +15,16 @@ import d3GeoProjection from "./d3.geoProjection.js";
 const {ICON_QUESTION} = Icons;
 const COLOR_WHITEISH = "rgb(253, 253, 253)";
 
-const PROFILE_CONSTANTS = {
+const MAX_RADIUS_EM = 0.05;
+
+const PROFILE_CONSTANTS = (width, height) => ({
   SMALL: {
     margin: { top: 10, right: 10, left: 10, bottom: 0 },
     headerMargin: {top: 10, right: 20, bottom: 20, left: 10},
     infoElHeight: 16,
     infoElMargin: 5,
     minRadiusPx: 0.5,
-    maxRadiusEm: 0.05
+    maxRadiusPx: Math.max(0.5, MAX_RADIUS_EM * utils.hypotenuse(width, height)),
   },
   MEDIUM: {
     margin: { top: 20, right: 20, left: 20, bottom: 30 },
@@ -30,7 +32,7 @@ const PROFILE_CONSTANTS = {
     infoElHeight: 20,
     infoElMargin: 5,
     minRadiusPx: 1,
-    maxRadiusEm: 0.05
+    maxRadiusPx: Math.max(0.5, MAX_RADIUS_EM * utils.hypotenuse(width, height)),
   },
   LARGE: {
     margin: { top: 30, right: 30, left: 30, bottom: 35 },
@@ -38,11 +40,11 @@ const PROFILE_CONSTANTS = {
     infoElHeight: 22,
     infoElMargin: 5,
     minRadiusPx: 1,
-    maxRadiusEm: 0.05
+    maxRadiusPx: Math.max(0.5, MAX_RADIUS_EM * utils.hypotenuse(width, height)),
   }
-};
+});
 
-const PROFILE_CONSTANTS_FOR_PROJECTOR = {
+const PROFILE_CONSTANTS_FOR_PROJECTOR = () => ({
   MEDIUM: {
     infoElHeight: 26,
     infoElMargin: 10,
@@ -51,7 +53,7 @@ const PROFILE_CONSTANTS_FOR_PROJECTOR = {
     infoElHeight: 32,
     infoElMargin: 10,
   }
-};
+});
 
 class _VizabiBubblemap extends BaseComponent {
 
@@ -212,9 +214,14 @@ class _VizabiBubblemap extends BaseComponent {
   _updateLayoutProfile(){
     this.services.layout.size;
 
-    this.profileConstants = this.services.layout.getProfileConstants(PROFILE_CONSTANTS, PROFILE_CONSTANTS_FOR_PROJECTOR);
     this.height = (this.element.node().clientHeight) || 0;
     this.width = (this.element.node().clientWidth) || 0;
+
+    this.profileConstants = this.services.layout.getProfileConstants(
+      PROFILE_CONSTANTS(this.width, this.height), 
+      PROFILE_CONSTANTS_FOR_PROJECTOR(this.width, this.height)
+    );
+    
     if (!this.height || !this.width) return utils.warn("Chart _updateProfile() abort: container is too little or has display:none");
 
   }
