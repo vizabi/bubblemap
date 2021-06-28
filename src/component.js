@@ -589,15 +589,9 @@ class _VizabiBubblemap extends BaseComponent {
     this.MDL.size.scale.domain;
 
     const {
-      minRadiusPx,
-      maxRadiusEm
+      minRadiusPx: minRadius,
+      maxRadiusPx: maxRadius
     } = this.profileConstants;
-
-    let minRadius = minRadiusPx;
-    let maxRadius = Math.max(
-      minRadiusPx,
-      maxRadiusEm * utils.hypotenuse(this.width, this.height)
-    );
 
     //transfer min max radius to size dialog via root ui observable (probably a cleaner way is possible)
     this.root.ui.minMaxRadius = {min: minRadius, max: maxRadius};
