@@ -410,9 +410,9 @@ class _VizabiBubblemap extends BaseComponent {
         .on("click", this._interact().click);
     } else {
       this.bubbles
-        .onTap((d, i) => {
-          d3.event.stopPropagation();
-          this._interact().click(d, i);
+        .onTap((event, d) => {
+          event.stopPropagation();
+          this._interact().click(event, d);
         });
     }
   }
@@ -421,7 +421,7 @@ class _VizabiBubblemap extends BaseComponent {
     const _this = this;
 
     return {
-      mouseover(d) {
+      mouseover(event, d) {
         if (_this.MDL.frame.dragging) return;
 
         _this.hovered = d;
@@ -431,9 +431,9 @@ class _VizabiBubblemap extends BaseComponent {
         //_this.fitSizeOfTitles();
        
         // if not selected, show tooltip
-        if (!_this.MDL.selected.data.filter.has(d)) _this._setTooltip(d);
+        if (!_this.MDL.selected.data.filter.has(d)) _this._setTooltip(event, d);
       },
-      mouseout(d) {
+      mouseout(event, d) {
         if (_this.MDL.frame.dragging) return;
 
         _this.hovered = null;
@@ -441,21 +441,21 @@ class _VizabiBubblemap extends BaseComponent {
         //_this.updateTitleNumbers();
         //_this.fitSizeOfTitles();
 
-        _this._setTooltip();
+        _this._setTooltip(event);
         //_this._labels.clearTooltip();
       },
-      click(d) {
+      click(event, d) {
         _this.MDL.highlighted.data.filter.delete(d);
-        _this._setTooltip();
+        _this._setTooltip(event);
         //_this._labels.clearTooltip();
         _this.MDL.selected.data.filter.toggle(d);
         //_this.selectToggleMarker(d);
       },
-      tap(d) {
-        _this._setTooltip();
+      tap(event, d) {
+        _this._setTooltip(event);
         _this.MDL.selected.data.filter.toggle(d);
         //_this.selectToggleMarker(d);
-        d3.event.stopPropagation();
+        event.stopPropagation();
       }
     };
   }
@@ -464,11 +464,11 @@ class _VizabiBubblemap extends BaseComponent {
     if(d) this.MDL.selected.data.filter.toggle(d);
   }
 
-  _setTooltip(d) {
-    if (d) {
+  _setTooltip(event, d) {
+    if (event && d) {
       const labelValues = {};
       const tooltipCache = {};
-      const mouse = d3.mouse(this.DOM.graph.node()).map(d => parseInt(d));
+      const mouse = d3.pointer(event);
       const x = d.center[0] || mouse[0];
       const y = d.center[1] || mouse[1];
       const offset = d.r || 0;
