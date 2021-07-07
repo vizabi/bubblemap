@@ -1,2 +1,2 @@
-# vizabi-barrankchart
+# vizabi-bubblemap
 Bubble map tool for Vizabi 📊
