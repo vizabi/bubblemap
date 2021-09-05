@@ -20,12 +20,14 @@ export default class BubbleMap extends BaseComponent {
 
   constructor(config){
 
-    const fullMarker = config.model.markers.bubble;
-    config.Vizabi.utils.applyDefaults(fullMarker.config, BubbleMap.DEFAULT_CORE);  
+    const markerName = config.options.markerName || "bubble";
+    const fullMarker = config.model.markers[markerName];
+    config.Vizabi.utils.applyDefaults(fullMarker.config, BubbleMap.DEFAULT_CORE(markerName));
       
     const frameType = config.Vizabi.stores.encodings.modelTypes.frame;
     const { marker, splashMarker } = frameType.splashMarker(fullMarker);
-    config.model.markers.bubble = marker;
+
+    config.model.markers[markerName] = marker;
 
     config.name = "bubblemap";
 
@@ -104,7 +106,8 @@ BubbleMap.DEFAULT_UI = {
   chart: {
   }
 };
-BubbleMap.DEFAULT_CORE = {
+
+BubbleMap.DEFAULT_CORE = (markerName) => ({
   requiredEncodings: ["lat", "lon", "size"],
   encoding: {
     "selected": {
@@ -160,7 +163,7 @@ BubbleMap.DEFAULT_CORE = {
       modelType: "order",
       direction: "desc",
       data: {
-        ref: "markers.bubble.encoding.size.data.config",
+        ref: `markers.${markerName}.encoding.size.data.config`
       }
     },
     "repeat": {
@@ -168,6 +171,6 @@ BubbleMap.DEFAULT_CORE = {
       allowEnc: ["size"]
     }
   }
-};
+});
 
 BubbleMap.versionInfo = { version: __VERSION, build: __BUILD, package: __PACKAGE_JSON_FIELDS, sharedComponents: versionInfo};
