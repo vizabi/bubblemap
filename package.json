@@ -1,6 +1,6 @@
 {
   "name": "@vizabi/bubblemap",
-  "version": "3.6.2",
+  "version": "3.6.3",
   "description": "Vizabi bubble map",
   "scripts": {
     "prepublishOnly": "npm run build",
@@ -53,6 +53,6 @@
     "@vizabi/shared-components": "../shared-components",
     "cross-env": "^5.0.0",
     "css.escape": "^1.5.1",
-    "vizabi-tool-bundler": "^1.2.1"
+    "vizabi-tool-bundler": "^1.2.2"
   }
 }
