@@ -4,7 +4,7 @@ import {
   Utils,
   LegacyUtils as utils,
   Labels,
-  DynamicBackground
+  DateTimeBackground
 } from "VizabiSharedComponents";
 
 import {decorate, computed, observable, action} from "mobx";
@@ -60,8 +60,8 @@ class _VizabiBubblemap extends BaseComponent {
   constructor(config) {
 
     config.subcomponents = [{
-      type: DynamicBackground,
-      placeholder: ".vzb-bmc-year"
+      type: DateTimeBackground,
+      placeholder: ".vzb-bmc-date"
     },{
       type: Labels,
       placeholder: ".vzb-bmc-labels",      
@@ -80,7 +80,7 @@ class _VizabiBubblemap extends BaseComponent {
       </svg>
       <svg class="vzb-bubblemap-svg vzb-export">
           <g class="vzb-bmc-graph">
-              <g class="vzb-bmc-year"></g>
+              <g class="vzb-bmc-date"></g>
 
               <g class="vzb-bmc-bubbles"></g>
 
@@ -157,7 +157,7 @@ class _VizabiBubblemap extends BaseComponent {
       this._initMap();
     });
     this._labels = this.findChild({type: "Labels"});
-    this._year = this.findChild({type: "DynamicBackground"});
+    this._date = this.findChild({type: "DateTimeBackground"});
   }
 
   get MDL(){
@@ -199,7 +199,7 @@ class _VizabiBubblemap extends BaseComponent {
 
   _updateYear() {
     const duration = this._getDuration();
-    this._year.setText(this.localise(this.MDL.frame.value), duration);
+    this._date.setText(this.MDL.frame.value, duration);
   }
 
   _drawForecastOverlay() {
@@ -562,13 +562,13 @@ class _VizabiBubblemap extends BaseComponent {
 
     const {margin} = this.profileConstants;
 
-    this._year.setConditions({ 
+    this._date.setConditions({ 
       xAlign: "right", 
       yAlign: "top", 
       widthRatio: 2 / 10,
       rightOffset: 30
     });
-    this._year.resizeText(this.width, this.height);
+    this._date.resizeText(this.width, this.height);
     //this.repositionElements();
     //this.rescaleMap();
 

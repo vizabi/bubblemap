@@ -4,7 +4,7 @@
 @import "../node_modules/@vizabi/shared-components/src/styles/vizabi-old/_chart.scss";
 
 .vzb-tool {
-  $vzb-bmc-year-size: 15em;
+  $vzb-bmc-date-size: 15em;
 
   .vzb-bubblemap {
     @extend %vzb-chart-wrapper;
@@ -48,9 +48,9 @@
       @extend %vzb-chart-svg;
       position: relative;
 
-      .vzb-bmc-year {
+      .vzb-bmc-date {
         @include opacity(.5);
-        font-size: $vzb-bmc-year-size;
+        font-size: $vzb-bmc-date-size;
         fill: $vzb-color-grey;
         text-anchor: middle;
         -webkit-touch-callout: none;
