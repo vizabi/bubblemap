@@ -657,9 +657,9 @@ class _VizabiBubblemap extends BaseComponent {
     this.services.layout.size;
 
     const sText = this.options.sTitle || 
-      this.localise("buttons/size") + ": " + (this.MDL.size.data.isConstant ? this.localise("indicator/_default/color") : this.MDL.size.data.conceptProps.name);
+      this.localise("buttons/size") + ": " + Utils.getConceptName(this.MDL.size, this.localise);
     const cText = this.options.cTitle || 
-      this.localise("buttons/color") + ": " + (this.MDL.color.data.isConstant ? this.localise("indicator/_default/color") : this.MDL.color.data.conceptProps.name);
+      this.localise("buttons/color") + ": " + Utils.getConceptName(this.MDL.color, this.localise);
 
     const treemenu = this.root.findChild({type: "TreeMenu"});
     const sTitle = this.DOM.sTitle

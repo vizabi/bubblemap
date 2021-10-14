@@ -4,6 +4,8 @@ import {
   TimeSlider,
   DataNotes,
   DataWarning,
+  ErrorMessage,
+  SpaceConfig,
   LocaleService,
   LayoutService,
   TreeMenu,
@@ -75,6 +77,17 @@ export default class BubbleMap extends BaseComponent {
       placeholder: ".vzb-buttonlist",
       name: "buttons",
       model: marker
+    },{
+      type: SpaceConfig,
+      placeholder: ".vzb-spaceconfig",
+      options: {button: ".vzb-spaceconfig-button"},
+      model: marker,
+      name: "space-config"
+    },{
+      type: ErrorMessage,
+      placeholder: ".vzb-errormessage",
+      model: marker,
+      name: "error-message"
     }];
 
     config.template = `
@@ -89,7 +102,9 @@ export default class BubbleMap extends BaseComponent {
       </div>
       <div class="vzb-treemenu"></div>
       <div class="vzb-datawarning"></div>
+      <div class="vzb-spaceconfig"></div>
       <div class="vzb-datanotes"></div>
+      <div class="vzb-errormessage"></div>
     `;
 
     config.services = {
