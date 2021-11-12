@@ -662,14 +662,20 @@ class _VizabiBubblemap extends BaseComponent {
 
     this.services.layout.size;
 
+    const sizeInfoHidden = this.ui.opacityRegular === 0;
+    const colorInfoHidden = this.services.layout.profile == "LARGE" && !sizeInfoHidden;
+
     const sText = this.options.sTitle || 
-      this.localise("buttons/size") + ": " + Utils.getConceptName(this.MDL.size, this.localise);
+      (colorInfoHidden? "" : this.localise("buttons/size") + ": ")
+      + Utils.getConceptName(this.MDL.size, this.localise);
     const cText = this.options.cTitle || 
-      this.localise("buttons/color") + ": " + Utils.getConceptName(this.MDL.color, this.localise);
+      (sizeInfoHidden? "" : this.localise("buttons/color") + ": ")  
+      + Utils.getConceptName(this.MDL.color, this.localise);
 
     const treemenu = this.root.findChild({type: "TreeMenu"});
     const sTitle = this.DOM.sTitle
       .classed("vzb-disabled", treemenu.state.ownReadiness !== Utils.STATUS.READY)
+      .classed("vzb-hidden", sizeInfoHidden)
       .on("click", () => {
         treemenu
           .encoding(this._alias("size"))
@@ -683,7 +689,7 @@ class _VizabiBubblemap extends BaseComponent {
 
     const cTitle = this.DOM.cTitle
       .classed("vzb-disabled", treemenu.state.ownReadiness !== Utils.STATUS.READY)
-      .classed("vzb-hidden", this.services.layout.profile == "LARGE")
+      .classed("vzb-hidden", colorInfoHidden)
       .on("click", () => {
         treemenu
           .encoding(this._alias("color"))
@@ -703,7 +709,8 @@ class _VizabiBubblemap extends BaseComponent {
     
     const sInfoTx = sTitleTx + sTitleBBox.width + infoElMargin;
     const sInfoTy = headerMargin.top + infoElHeight / 4;
-    this.DOM.sInfo.attr("transform", `translate(${sInfoTx}, ${sInfoTy})`);
+    this.DOM.sInfo.attr("transform", `translate(${sInfoTx}, ${sInfoTy})`)
+      .classed("vzb-hidden", sizeInfoHidden);
     this._drawInfoEl(this.DOM.sInfo, sTitle, this.MDL.size);
 
 
@@ -716,7 +723,7 @@ class _VizabiBubblemap extends BaseComponent {
     const cInfoTx = cTitleTx + cTitleBBox.width + infoElMargin;
     const cInfoTy = sTitleTy + infoElHeight / 4 + infoElMargin;
     this.DOM.cInfo.attr("transform", `translate(${cInfoTx}, ${cInfoTy})`)
-      .classed("vzb-hidden", this.services.layout.profile == "LARGE");
+      .classed("vzb-hidden", colorInfoHidden);
     this._drawInfoEl(this.DOM.cInfo, cTitle, this.MDL.color);
 
 
