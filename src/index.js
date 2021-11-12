@@ -38,8 +38,8 @@ export default class BubbleMap extends BaseComponent {
       placeholder: ".vzb-repeater",
       model: marker,
       options: {
-        ComponentClass: VizabiBubblemap,
-        componentCssName: "vzb-bubblemap"
+        repeatedComponent: VizabiBubblemap,
+        repeatedComponentCssClass: "vzb-bubblemap"
       },
       name: "chart",
     },{
@@ -91,7 +91,7 @@ export default class BubbleMap extends BaseComponent {
     }];
 
     config.template = `
-      <div class="vzb-repeater vzb-bubblemap"></div>
+      <div class="vzb-repeater"></div>
       <div class="vzb-animationcontrols">
         <div class="vzb-timeslider"></div>
         <div class="vzb-speedslider"></div>
