@@ -150,8 +150,8 @@ class _VizabiBubblemap extends BaseComponent {
 
     //guess map bounds (hardcoded for gapminder bubble map world-50m.json)
     this.mapBounds = [
-      [-3.0365722270964945, -1.4899523584310421],
-      [3.049764882149918, 1.5707963267948966]
+      [-3.036572068908535, -1.4899523136604478],
+      [3.0497648407508264, 1.5707963265556506]
     ];
     this.preload().then(()=>{
       this._initMap();
@@ -267,27 +267,22 @@ class _VizabiBubblemap extends BaseComponent {
 
     this.DOM.mapGraph.html("");
 
-    this.mapFeature = topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.geo]);
-    const boundaries = topojson.mesh(this.topology, this.topology.objects[this.ui.map.topology.objects.boundaries], (a, b) => a !== b);
-
-    this.mapBounds = this.mapPath.bounds(this.mapFeature);
-
-    if (this.mapFeature.features) {
+    const mapFeature = topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.boundaries]);
+    
+    if (mapFeature.features) {
       this.DOM.mapGraph.selectAll(".land")
-        .data(this.mapFeature.features)
-        .enter().insert("path")
-        .attr("d", this.mapPath)
-        .attr("id", d => d.properties[this.ui.map.topology.geoIdProperty].toLowerCase())
-        .attr("class", "land");
+      .data(mapFeature.features)
+      .enter().insert("path")
+      .attr("d", this.mapPath)
+      .attr("id", d => d.id)
+      .attr("class", "land");
     } else {
       this.DOM.mapGraph.insert("path")
-        .datum(this.mapFeature)
-        .attr("class", "land");
+      .datum(mapFeature)
+      .attr("class", "land");
     }
 
-    this.DOM.mapGraph.insert("path")
-      .datum(boundaries)
-      .attr("class", "boundary");
+    this.mapBounds = this.mapPath.bounds(topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.geo]));
   }
 
   _rescaleMap() {
@@ -566,7 +561,8 @@ class _VizabiBubblemap extends BaseComponent {
       xAlign: "right", 
       yAlign: "top", 
       widthRatio: 2 / 10,
-      rightOffset: 30
+      rightOffset: 30,
+      topOffset: 10
     });
     this._date.resizeText(this.width, this.height);
     //this.repositionElements();
