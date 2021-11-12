@@ -184,8 +184,9 @@ class _VizabiBubblemap extends BaseComponent {
     this.addReaction(this._rescaleMap);
     this.addReaction(this._drawHeader);
     this.addReaction(this._updateYear);
-    this.addReaction(this._drawData);
-    this.addReaction(this._updateOpacity);
+    this.addReaction(this._updateShapes);
+    this.addReaction(this._updateBubbles);
+    this.addReaction(this._updateBubbleOpacity);
     this.addReaction(this._drawForecastOverlay);
   }
 
@@ -373,20 +374,21 @@ class _VizabiBubblemap extends BaseComponent {
 
   }
 
-  getValue(d){
-    return d;
-  }
-
-  _processFrameData() {
-    return this.__dataProcessed = this.model.dataArray
-      .concat()
-      .map(this.getValue);
+  _updateShapes() {
+    if (this.ui.opacityRegular !== 0)
+      this.DOM.mapGraph.selectAll(".land").style("fill", null);
+    else
+      this.model.dataArray.forEach(d => {
+        let view = this.DOM.mapGraph.select(".land#" + d[Symbol.for("key")]);
+        if(this.__duration) view = view.transition().duration(this.__duration).ease(d3.easeLinear);
+        view.style("fill", (!d.color && d.color !== 0) ? null : this.cScale(d.color));
+      });
   }
 
   _createAndDeleteBubbles() {
 
     this.bubbles = this.DOM.bubbleContainer.selectAll(".vzb-bmc-bubble")
-      .data(this.__dataProcessed, d => d[Symbol.for("key")]);
+      .data(this.model.dataArray, d => d[Symbol.for("key")]);
 
     //exit selection
     this.bubbles.exit().remove();
@@ -491,10 +493,16 @@ class _VizabiBubblemap extends BaseComponent {
     return d[Symbol.for("key")];
   }
 
-  _drawData(duration) {
+  _updateBubbles(duration) {
     this.services.layout.size;
+
+    if(this.ui.opacityRegular === 0) {
+      this.DOM.bubbleContainer.selectAll(".vzb-bmc-bubble")
+        .classed("vzb-hidden", true);
+        
+      return;
+    }
     
-    this._processFrameData();
     this._createAndDeleteBubbles();
     this.updateMarkerSizeLimits();
 
@@ -604,8 +612,10 @@ class _VizabiBubblemap extends BaseComponent {
   }
 
 
-  _updateOpacity() {
+  _updateBubbleOpacity() {
     this.MDL.frame.value; //listen
+
+    if(this.ui.opacityRegular === 0) return;
 
     const {
       opacityHighlightDim,

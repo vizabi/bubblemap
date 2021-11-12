@@ -33,14 +33,10 @@
       }
 
       .land {
-        fill: $vzb-color-grey;
-        opacity: .4;
-      }
-
-      .boundary {
-        fill: none;
-        stroke: #fff;
-        stroke-width: .5px;
+        fill: $vzb-color-grey-light;
+        stroke: $vzb-color-black;
+        stroke-width: 0.5px;
+        stroke-linejoin: round;
       }
     }
 
