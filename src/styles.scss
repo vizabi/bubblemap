@@ -34,7 +34,7 @@
 
       .land {
         fill: $vzb-color-grey-light;
-        stroke: $vzb-color-black;
+        stroke: $vzb-color-white;
         stroke-width: 0.5px;
         stroke-linejoin: round;
       }
@@ -45,7 +45,6 @@
       position: relative;
 
       .vzb-bmc-date {
-        @include opacity(.5);
         font-size: $vzb-bmc-date-size;
         fill: $vzb-color-grey;
         text-anchor: middle;

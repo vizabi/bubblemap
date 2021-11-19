@@ -14,6 +14,7 @@ import d3GeoProjection from "./d3.geoProjection.js";
 
 const {ICON_QUESTION} = Icons;
 const COLOR_WHITEISH = "rgb(253, 253, 253)";
+const COLOR_BLACKISH = "rgb(51, 51, 51)";
 
 const MAX_RADIUS_EM = 0.05;
 
@@ -376,12 +377,14 @@ class _VizabiBubblemap extends BaseComponent {
 
   _updateShapes() {
     if (this.ui.opacityRegular !== 0)
-      this.DOM.mapGraph.selectAll(".land").style("fill", null);
+      this.DOM.mapGraph.selectAll(".land").style("fill", null).style("stroke", null);
     else
       this.model.dataArray.forEach(d => {
         let view = this.DOM.mapGraph.select(".land#" + d[Symbol.for("key")]);
         if(this.__duration) view = view.transition().duration(this.__duration).ease(d3.easeLinear);
-        view.style("fill", (!d.color && d.color !== 0) ? null : this.cScale(d.color));
+        view
+          .style("stroke", COLOR_BLACKISH)
+          .style("fill", (!d.color && d.color !== 0) ? null : this.cScale(d.color));
       });
   }
 
