@@ -187,7 +187,7 @@ class _VizabiBubblemap extends BaseComponent {
     this.addReaction(this._updateYear);
     this.addReaction(this._updateShapes);
     this.addReaction(this._updateBubbles);
-    this.addReaction(this._updateBubbleOpacity);
+    this.addReaction(this._updateOpacity);
     this.addReaction(this._drawForecastOverlay);
   }
 
@@ -257,6 +257,10 @@ class _VizabiBubblemap extends BaseComponent {
     });
   }
 
+  _getMarkerItemForShape(dShape = {}) {
+    return dShape.id ? this.model.dataMap.get(dShape.id) : undefined;
+  }
+
   _initMap() {
     if (!this.topology) utils.warn("Bubble map is missing the map data:", this.topology);
 
@@ -272,16 +276,41 @@ class _VizabiBubblemap extends BaseComponent {
     const mapFeature = topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.boundaries]);
     
     if (mapFeature.features) {
-      this.DOM.mapGraph.selectAll(".land")
-      .data(mapFeature.features)
-      .enter().insert("path")
-      .attr("d", this.mapPath)
-      .attr("id", d => d.id)
-      .attr("class", "land");
+      this.areas = this.DOM.mapGraph.selectAll(".land")
+        .data(mapFeature.features)
+        .enter().insert("path")
+        .attr("d", this.mapPath)
+        .attr("id", dShape => dShape.id)
+        .attr("class", "land");
+
+      
+
+      if(!utils.isTouchDevice()){
+        this.areas
+          .on("mouseover", (event, dShape) => {
+            if (this.ui.opacityRegular !== 0) return;
+            this._interact().mouseover(event, this._getMarkerItemForShape(dShape)) 
+          })
+          .on("mouseout", (event, dShape) => {
+            if (this.ui.opacityRegular !== 0) return;
+            this._interact().mouseout(event, this._getMarkerItemForShape(dShape))
+          })
+          .on("click", (event, dShape) => {
+            if (this.ui.opacityRegular !== 0) return;
+            this._interact().click(event, this._getMarkerItemForShape(dShape))
+          });
+        } else {
+        this.areas
+          .onTap((event, dShape) => {
+            if (this.ui.opacityRegular !== 0) return;
+            event.stopPropagation();
+            this._interact().click(event, this._getMarkerItemForShape(dShape));
+          });
+      }
     } else {
       this.DOM.mapGraph.insert("path")
-      .datum(mapFeature)
-      .attr("class", "land");
+        .datum(mapFeature)
+        .attr("class", "land");
     }
 
     this.mapBounds = this.mapPath.bounds(topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.geo]));
@@ -385,6 +414,9 @@ class _VizabiBubblemap extends BaseComponent {
         view
           .style("stroke", COLOR_BLACKISH)
           .style("fill", (!d.color && d.color !== 0) ? null : this.cScale(d.color));
+
+        d.center = this.skew(this.projection([d.lon || 0, d.lat || 0]));
+        this._updateLabel(d, this.__duration);
       });
   }
 
@@ -422,7 +454,7 @@ class _VizabiBubblemap extends BaseComponent {
 
     return {
       mouseover(event, d) {
-        if (_this.MDL.frame.dragging) return;
+        if (_this.MDL.frame.dragging || !d) return;
 
         _this.hovered = d;
         _this.MDL.highlighted.data.filter.set(d);
@@ -434,7 +466,7 @@ class _VizabiBubblemap extends BaseComponent {
         if (!_this.MDL.selected.data.filter.has(d)) _this._setTooltip(event, d);
       },
       mouseout(event, d) {
-        if (_this.MDL.frame.dragging) return;
+        if (_this.MDL.frame.dragging || !d) return;
 
         _this.hovered = null;
         _this.MDL.highlighted.data.filter.delete(d);
@@ -445,6 +477,8 @@ class _VizabiBubblemap extends BaseComponent {
         //_this._labels.clearTooltip();
       },
       click(event, d) {
+        if (_this.MDL.frame.dragging || !d) return;
+
         _this.MDL.highlighted.data.filter.delete(d);
         _this._setTooltip(event);
         //_this._labels.clearTooltip();
@@ -452,6 +486,8 @@ class _VizabiBubblemap extends BaseComponent {
         //_this.selectToggleMarker(d);
       },
       tap(event, d) {
+        if (_this.MDL.frame.dragging || !d) return;
+
         _this._setTooltip(event);
         _this.MDL.selected.data.filter.toggle(d);
         //_this.selectToggleMarker(d);
@@ -469,8 +505,8 @@ class _VizabiBubblemap extends BaseComponent {
       const labelValues = {};
       const tooltipCache = {};
       const mouse = d3.pointer(event);
-      const x = d.center[0] || mouse[0];
-      const y = d.center[1] || mouse[1];
+      const x = d.center? d.center[0] : mouse[0];
+      const y = d.center? d.center[1] : mouse[1];
       const offset = d.r || 0;
 
       labelValues.valueS = d[this._alias("size")];
@@ -615,10 +651,8 @@ class _VizabiBubblemap extends BaseComponent {
   }
 
 
-  _updateBubbleOpacity() {
+  _updateOpacity() {
     this.MDL.frame.value; //listen
-
-    if(this.ui.opacityRegular === 0) return;
 
     const {
       opacityHighlightDim,
@@ -632,8 +666,9 @@ class _VizabiBubblemap extends BaseComponent {
     const someHighlighted = _highlighted.markers.size > 0;
     const someSelected = _selected.markers.size > 0;
 
-    this.bubbles
-      .style("opacity", d => {
+
+    if(this.ui.opacityRegular !== 0) {
+      this.bubbles.style("opacity", d => {
         if (_highlighted.has(d)) return opacityRegular;
         if (_selected.has(d)) return opacityRegular;
 
@@ -642,6 +677,20 @@ class _VizabiBubblemap extends BaseComponent {
 
         return opacityRegular;
       });
+    } else {
+      this.areas.style("opacity", dShape => {
+        const d = this._getMarkerItemForShape(dShape);
+
+        if (d && _highlighted.has(d)) return 1;
+        if (d && _selected.has(d)) return 1;
+
+        if (someSelected) return opacitySelectDim;
+        if (someHighlighted) return opacityHighlightDim;
+
+        return 1;
+      });
+    }
+      
   }
 
   _unselectBubblesWithNoData() {

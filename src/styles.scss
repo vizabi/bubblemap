@@ -43,6 +43,11 @@
     .vzb-bubblemap-svg {
       @extend %vzb-chart-svg;
       position: relative;
+      pointer-events: none;
+
+      .vzb-bmc-graph {
+        pointer-events: visible;
+      }
 
       .vzb-bmc-date {
         font-size: $vzb-bmc-date-size;
@@ -108,7 +113,10 @@
             unicode-bidi: embed;
           }
         }
-        rect {
+        .vzb-bmc-tooltip rect{
+          pointer-events: none;
+        }
+        .vzb-bmc-entity rect {
           pointer-events: visible;
         }
         .vzb-bmc-entity {
