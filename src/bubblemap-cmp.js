@@ -121,6 +121,7 @@ class _VizabiBubblemap extends BaseComponent {
       element: this.element,
 
       graph: this.element.select(".vzb-bmc-graph"),
+      date: this.element.select(".vzb-bmc-date"),
       mapSvg: this.element.select(".vzb-bmc-map-background"),
       mapGraph: this.element.select(".vzb-bmc-map-graph"),
   
@@ -189,6 +190,7 @@ class _VizabiBubblemap extends BaseComponent {
     this.addReaction(this._updateBubbles);
     this.addReaction(this._updateOpacity);
     this.addReaction(this._drawForecastOverlay);
+    this.addReaction(this._updateShowYear);
   }
 
   _getDuration() {
@@ -202,6 +204,10 @@ class _VizabiBubblemap extends BaseComponent {
   _updateYear() {
     const duration = this._getDuration();
     this._date.setText(this.MDL.frame.value, duration);
+  }
+
+  _updateShowYear() {
+    this.DOM.date.classed("vzb-hidden", !this.ui.timeInBackground);
   }
 
   _drawForecastOverlay() {
@@ -820,6 +826,7 @@ class _VizabiBubblemap extends BaseComponent {
 
 
 _VizabiBubblemap.DEFAULT_UI = {
+  timeInBackground: true,
   showForecast: false,
   showForecastOverlay: true,
   pauseBeforeForecast: true,
