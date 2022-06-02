@@ -77,9 +77,11 @@ class _VizabiBubblemap extends BaseComponent {
 
     config.template = `
       <svg class="vzb-bubblemap-svg vzb-export">
-        <svg class="vzb-bmc-map-background">
-            <g class="vzb-bmc-map-graph"></g>
-        </svg>
+        <g class="vzb-bmc-map-translatecontainer">
+          <svg class="vzb-bmc-map-background">
+              <g class="vzb-bmc-map-graph"></g>
+          </svg>
+        </g>
         <svg class="vzb-bubblemap-foreground">
             <g class="vzb-bmc-graph">
                 <g class="vzb-bmc-date"></g>
@@ -124,10 +126,10 @@ class _VizabiBubblemap extends BaseComponent {
 
       graph: this.element.select(".vzb-bmc-graph"),
       date: this.element.select(".vzb-bmc-date"),
+      mapTranslateContainer: this.element.select(".vzb-bmc-map-translatecontainer"),
       mapSvg: this.element.select(".vzb-bmc-map-background"),
       mapGraph: this.element.select(".vzb-bmc-map-graph"),
   
-      bubbleContainerCrop: this.element.select(".vzb-bmc-bubbles-crop"),
       bubbleContainer: this.element.select(".vzb-bmc-bubbles"),
       labelListContainer: this.element.select(".vzb-bmc-bubble-labels"),
   
@@ -381,6 +383,15 @@ class _VizabiBubblemap extends BaseComponent {
       heightScale = 1;
 
     }
+    
+    // reposition map layer. can't do ehis on the inner g mapGraph because it has a skewy transform applied to the whole mapSvg around it.
+    // can not do this on mapSvg either because svg does't support transform attribute
+    this.DOM.mapTranslateContainer
+    .attr("transform", "translate(" + (margin.left + (this.width - viewPortWidth) / 2) + "," + (margin.top + (this.height - viewPortHeight) / 2) + ")");
+    
+    this.DOM.mapSvg
+    .attr("width", viewPortWidth)
+    .attr("height", viewPortHeight);
 
     // internal offset against parent container (mapSvg)
     this.DOM.mapGraph
@@ -388,13 +399,7 @@ class _VizabiBubblemap extends BaseComponent {
 
     this.DOM.graph
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    // resize and put in center
-    this.DOM.mapSvg
-      .style("transform", "translate3d(" + (margin.left + (this.width - viewPortWidth) / 2) + "px," + (margin.top + (this.height - viewPortHeight) / 2) + "px,0)")
-      .attr("width", viewPortWidth)
-      .attr("height", viewPortHeight);
-
+    
     // set skew function used for bubbles in chart
     const _this = this;
     this.skew = (function() {
