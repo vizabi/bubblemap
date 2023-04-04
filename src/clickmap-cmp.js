@@ -2,7 +2,7 @@ import {VizabiBubblemap} from "./bubblemap-cmp.js";
   
 export class VizabiClickmap extends VizabiBubblemap {
 
-  _drawHeader() {};
+  _drawHeader() {}
   _interact() {
     const _this = this;
 
@@ -14,7 +14,7 @@ export class VizabiClickmap extends VizabiBubblemap {
       _this.MDL.highlighted.data.filter.delete(d);
       _this._setTooltip(event);
       if (_this.ui.clickUrl) window.open(_this.ui.clickUrl + d[Symbol.for("key")]);
-      }
+    };
     return interact;
   }
 

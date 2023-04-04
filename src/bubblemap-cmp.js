@@ -300,17 +300,17 @@ class _VizabiBubblemap extends BaseComponent {
         this.areas
           .on("mouseover", (event, dShape) => {
             if (this.ui.opacityRegular !== 0) return;
-            this._interact().mouseover(event, this._getMarkerItemForShape(dShape)) 
+            this._interact().mouseover(event, this._getMarkerItemForShape(dShape)); 
           })
           .on("mouseout", (event, dShape) => {
             if (this.ui.opacityRegular !== 0) return;
-            this._interact().mouseout(event, this._getMarkerItemForShape(dShape))
+            this._interact().mouseout(event, this._getMarkerItemForShape(dShape));
           })
           .on("click", (event, dShape) => {
             if (this.ui.opacityRegular !== 0) return;
-            this._interact().click(event, this._getMarkerItemForShape(dShape))
+            this._interact().click(event, this._getMarkerItemForShape(dShape));
           });
-        } else {
+      } else {
         this.areas
           .onTap((event, dShape) => {
             if (this.ui.opacityRegular !== 0) return;
@@ -388,11 +388,11 @@ class _VizabiBubblemap extends BaseComponent {
     // reposition map layer. can't do ehis on the inner g mapGraph because it has a skewy transform applied to the whole mapSvg around it.
     // can not do this on mapSvg either because svg does't support transform attribute
     this.DOM.mapTranslateContainer
-    .attr("transform", "translate(" + (margin.left + (this.width - viewPortWidth) / 2) + "," + (margin.top + (this.height - viewPortHeight) / 2) + ")");
+      .attr("transform", "translate(" + (margin.left + (this.width - viewPortWidth) / 2) + "," + (margin.top + (this.height - viewPortHeight) / 2) + ")");
     
     this.DOM.mapSvg
-    .attr("width", viewPortWidth)
-    .attr("height", viewPortHeight);
+      .attr("width", viewPortWidth)
+      .attr("height", viewPortHeight);
 
     // internal offset against parent container (mapSvg)
     this.DOM.mapGraph

@@ -1,7 +1,6 @@
 import "./styles.scss";
 import { 
   BaseComponent,
-  TimeSlider,
   DataNotes,
   DataWarning,
   ErrorMessage,
@@ -9,7 +8,6 @@ import {
   LocaleService,
   LayoutService,
   TreeMenu,
-  SteppedSlider,
   Dialogs,
   ButtonList,
   CapitalVizabiService,
