@@ -5,7 +5,8 @@ import {
   LegacyUtils as utils,
   Labels,
   DateTimeBackground
-} from "VizabiSharedComponents";
+} from "@vizabi/shared-components";
+import * as d3 from "d3";
 
 import {decorate, computed, observable, action} from "mobx";
 

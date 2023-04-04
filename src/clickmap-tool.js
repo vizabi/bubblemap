@@ -15,7 +15,7 @@ import {
   CapitalVizabiService,
   Repeater,
   versionInfo
-} from "VizabiSharedComponents";
+} from "@vizabi/shared-components";
 import { VizabiClickmap } from "./clickmap-cmp.js";
 
 export default class ClickMap extends BaseComponent {
@@ -93,6 +93,8 @@ export default class ClickMap extends BaseComponent {
       <div class="vzb-errormessage"></div>
     `;
 
+    config.locale.Vizabi = config.Vizabi;
+    config.layout.Vizabi = config.Vizabi;
     config.services = {
       Vizabi: new CapitalVizabiService({Vizabi: config.Vizabi}),
       locale: new LocaleService(config.locale),

@@ -1,4 +1,3 @@
-import {LegacyUtils as utils} from "VizabiSharedComponents";
 import {VizabiBubblemap} from "./bubblemap-cmp.js";
   
 export class VizabiClickmap extends VizabiBubblemap {
