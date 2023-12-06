@@ -658,10 +658,7 @@ class _VizabiBubblemap extends BaseComponent {
     let minArea = utils.radiusToArea(Math.max(maxRadius * extent[0], minRadius));
     let maxArea = utils.radiusToArea(Math.max(maxRadius * extent[1], minRadius));
 
-    let range = minArea === maxArea ? [minArea, maxArea] :
-      d3.range(minArea, maxArea, (maxArea - minArea) / (this.sScale.domain().length - 1)).concat(maxArea);
-
-    this.sScale.range(range);
+    this.sScale.range([minArea, maxArea]);
   }
 
 
