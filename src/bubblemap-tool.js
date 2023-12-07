@@ -136,7 +136,7 @@ BubbleMap.DEFAULT_CORE = (markerName) => ({
     "size": {
       scale: {
         modelType: "size",
-        allowedTypes: ["linear", "log", "genericLog", "pow", "point"],
+        allowedTypes: ["linear", "log", "genericLog", "pow"],
       }
     },
     "lat": {
