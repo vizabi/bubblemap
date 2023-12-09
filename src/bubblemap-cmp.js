@@ -329,7 +329,7 @@ class _VizabiBubblemap extends BaseComponent {
         .attr("class", "land");
     }
 
-    this.mapBounds = this.mapPath.bounds(topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.geo]));
+    this.mapBounds = this.mapPath.bounds(topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.boundaries]));
   }
 
   _rescaleMap() {
