@@ -269,11 +269,14 @@ class _VizabiBubblemap extends BaseComponent {
   }
 
   _getMarkerItemForShape(dShape = {}) {
-    return dShape.id ? this.model.dataMap.get(dShape.id) : undefined;
+    const ID = this.ui.map.topology.geoIdProperty;
+    const id = dShape.id || dShape.properties?.[ID];
+    return id ? this.model.dataMap.get(id) : undefined;
   }
 
   _initMap() {
     if (!this.topology) utils.warn("Bubble map is missing the map data:", this.topology);
+    const ID = this.ui.map.topology.geoIdProperty;
 
     this.projection
       .scale(1)
@@ -291,7 +294,7 @@ class _VizabiBubblemap extends BaseComponent {
         .data(mapFeature.features)
         .enter().insert("path")
         .attr("d", this.mapPath)
-        .attr("id", dShape => dShape.id)
+        .attr("id", dShape => dShape.id || dShape.properties?.[ID])
         .attr("class", "land");
 
       
