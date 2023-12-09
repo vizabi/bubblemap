@@ -276,10 +276,12 @@ class _VizabiBubblemap extends BaseComponent {
 
   _initMap() {
     if (!this.topology) utils.warn("Bubble map is missing the map data:", this.topology);
+    const rotate = this.ui.map.rotate;
     const ID = this.ui.map.topology.geoIdProperty;
 
     this.projection
       .scale(1)
+      .rotate(rotate || [0,0])
       .translate([0, 0]);
 
     this.mapPath = d3.geoPath()
@@ -858,11 +860,12 @@ _VizabiBubblemap.DEFAULT_UI = {
     colorGeo: false,
     preserveAspectRatio: false,
     scale: 1.1,
+    rotate: [-11, 0],
     offset: {
       top: 0.05,
-      right: 0,
-      bottom: -0.2,
-      left: -0.15
+      right: 0.01,
+      bottom: 0.05,
+      left: -0.12
     },
     projection: "geo" + "Aitoff",
     topology: {
