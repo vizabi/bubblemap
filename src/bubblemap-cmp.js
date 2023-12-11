@@ -730,8 +730,8 @@ class _VizabiBubblemap extends BaseComponent {
 
     this.services.layout.size;
 
-    const sizeInfoHidden = this.ui.opacityRegular === 0;
-    const colorInfoHidden = this.services.layout.profile == "LARGE" && !sizeInfoHidden;
+    const sizeInfoHidden = this.ui.opacityRegular === 0 || !this.ui.showTitles;
+    const colorInfoHidden = this.services.layout.profile == "LARGE" && !sizeInfoHidden || !this.ui.showTitles;
 
     const sText = this.options.sTitle || 
       (colorInfoHidden? "" : this.localise("buttons/size") + ": ")
@@ -836,6 +836,7 @@ class _VizabiBubblemap extends BaseComponent {
 
 
 _VizabiBubblemap.DEFAULT_UI = {
+  showTitles: true,
   timeInBackground: true,
   showForecast: false,
   showForecastOverlay: true,
