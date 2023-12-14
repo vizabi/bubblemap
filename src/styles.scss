@@ -43,7 +43,6 @@
     .vzb-bubblemap-svg {
       @extend %vzb-chart-svg;
       position: relative;
-      pointer-events: none;
 
       .vzb-bmc-graph {
         pointer-events: visible;
