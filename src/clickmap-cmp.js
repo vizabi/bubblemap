@@ -2,7 +2,6 @@ import {VizabiBubblemap} from "./bubblemap-cmp.js";
   
 export class VizabiClickmap extends VizabiBubblemap {
 
-  _drawHeader() {}
   _interact() {
     const _this = this;
 
