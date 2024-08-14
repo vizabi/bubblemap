@@ -289,7 +289,8 @@ class _VizabiBubblemap extends BaseComponent {
 
     this.DOM.mapGraph.html("");
 
-    const mapFeature = topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.boundaries]);
+    const mapFeature = topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.areas]);
+    this.mapBounds = this.mapPath.bounds(mapFeature);
     
     if (mapFeature.features) {
       this.areas = this.DOM.mapGraph.selectAll(".land")
@@ -329,7 +330,6 @@ class _VizabiBubblemap extends BaseComponent {
         .attr("class", "land");
     }
 
-    this.mapBounds = this.mapPath.bounds(topojson.feature(this.topology, this.topology.objects[this.ui.map.topology.objects.boundaries]));
   }
 
   _rescaleMap() {
@@ -872,8 +872,7 @@ _VizabiBubblemap.DEFAULT_UI = {
     topology: {
       path: "assets/world-50m.json",
       objects: {
-        geo: "land",
-        boundaries: "countries"
+        areas: "countries"
       },
       geoIdProperty: null,
     }
