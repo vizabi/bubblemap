@@ -120,7 +120,7 @@ ClickMap.DEFAULT_CORE = (markerName) => ({
     "size": {
       scale: {
         modelType: "size",
-        allowedTypes: ["linear", "log", "genericLog", "pow", "point"]
+        allowedTypes: ["linear"]
       }
     },
     "lat": {
@@ -155,7 +155,7 @@ ClickMap.DEFAULT_CORE = (markerName) => ({
       },
       scale: {
         modelType: "size",
-        allowedTypes: ["linear", "log", "genericLog", "pow", "point"],
+        allowedTypes: ["linear", "point"],
       }
     },
     "frame": {
