@@ -179,7 +179,7 @@ class _VizabiBubblemap extends BaseComponent {
   }
 
   draw(){
-    this.localise = this.services.locale.auto(this.MDL.frame.interval);
+    this.localise = this.services.locale.auto({interval: this.MDL.frame.interval});
 
     // new scales and axes
     this.sScale = this.MDL.size.scale.d3Scale;
