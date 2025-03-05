@@ -187,7 +187,7 @@ class _VizabiBubblemap extends BaseComponent {
 
     if (this._updateLayoutProfile()) return; //return if exists with error
     
-    this.addReaction(this.updateSize);    
+    this.addReaction(this.updateSize, {throttle_ms: 50});    
     this.addReaction(this._rescaleMap);
     this.addReaction(this._drawHeader);
     this.addReaction(this._updateYear);
