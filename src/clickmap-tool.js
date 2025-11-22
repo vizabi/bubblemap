@@ -47,7 +47,7 @@ export default class ClickMap extends BaseComponent {
     },{
       type: DataWarning,
       placeholder: ".vzb-datawarning",
-      options: {button: ".vzb-datawarning-button"},
+      options: {appendButtonHere: ".vzb-repeater"},
       model: marker,
       name: "data-warning"
     },{

@@ -107,7 +107,6 @@ class _VizabiBubblemap extends BaseComponent {
                 </svg>
             </g>
             <rect class="vzb-bmc-forecastoverlay vzb-hidden" x="0" y="0" width="100%" height="100%" fill="url(#vzb-bmc-pattern-lines-${config.id})" pointer-events='none'></rect>
-            <g class="vzb-datawarning-button vzb-noexport"></g>
         </svg>
         <svg>
             <defs>
@@ -633,16 +632,6 @@ class _VizabiBubblemap extends BaseComponent {
     this._date.resizeText(this.width, this.height);
     //this.repositionElements();
     //this.rescaleMap();
-
-    this.root.findChild({type: "_DataWarning"}).setOptions({
-      width: this.width,
-      height: this.height,
-      vertical: "bottom", 
-      horizontal: this.services.locale.isRTL() ? "left" : "right",
-      right: margin.right,
-      left: margin.left,
-      bottom: margin.bottom
-    });
   }
 
   updateMarkerSizeLimits() {
@@ -846,10 +835,6 @@ _VizabiBubblemap.DEFAULT_UI = {
   opacityHighlightDim: 0.1,
   opacitySelectDim: 0.3,
   opacityRegular: 0.5,
-  datawarning: {
-    doubtDomain: [],
-    doubtRange: []
-  },
   labels: {
     enabled: true,
     dragging: true,
