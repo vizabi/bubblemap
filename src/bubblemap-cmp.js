@@ -825,41 +825,37 @@ class _VizabiBubblemap extends BaseComponent {
 
 
 _VizabiBubblemap.DEFAULT_UI = {
-  showTitles: true,
-  timeInBackground: true,
-  showForecast: false,
-  showForecastOverlay: true,
-  pauseBeforeForecast: true,
-  opacityHighlight: 1.0,
-  opacitySelect: 1.0,
-  opacityHighlightDim: 0.1,
-  opacitySelectDim: 0.3,
-  opacityRegular: 0.5,
-  labels: {
-    enabled: true,
-    dragging: true,
-    removeLabelBox: false
+  "showTitles": true,
+  "timeInBackground": true,
+  "showForecast": false,
+  "showForecastOverlay": true,
+  "pauseBeforeForecast": true,
+  "opacityHighlight": 1.0,
+  "opacitySelect": 1.0,
+  "opacityHighlightDim": 0.1,
+  "opacitySelectDim": 0.3,
+  "opacityRegular": 0.5,
+  "labels": {
+    "enabled": true,
+    "dragging": true,
+    "removeLabelBox": false
   },
-  superhighlightOnMinimapHover: true,
-  map: {
-    path: null,
-    colorGeo: false,
-    preserveAspectRatio: false,
-    scale: 1.1,
-    rotate: [-11, 0],
-    offset: {
-      top: 0.05,
-      right: 0.01,
-      bottom: 0.05,
-      left: -0.12
-    },
-    projection: "geo" + "Aitoff",
-    topology: {
-      path: "assets/world-50m.json",
-      objects: {
-        areas: "countries"
+  "superhighlightOnMinimapHover": true,
+  "map": {
+    "path": null,
+    "colorGeo": false,
+    "preserveAspectRatio": false,
+    "scale": 1,
+    "rotate": [0, 0],
+    "offset": { "top": 0, "right": 0, "bottom": 0, "left": 0 },
+    "projection": "mercator",
+    "topology": {
+      "path": "assets/shapes.json",
+      "objects": {
+        "areas": "shapes",
+        "boundaries": "shapes",
       },
-      geoIdProperty: null,
+      "geoIdProperty": "id"
     }
   }
 };

@@ -21,15 +21,14 @@ export default class BubbleMap extends BaseComponent {
 
   constructor(config){
 
-    const markerName = config.options?.markerNames?.bubble || "bubble";
-    const fullMarker = config.model.markers[markerName];
-    config.Vizabi.utils.applyDefaults(fullMarker.config, BubbleMap.DEFAULT_CORE(markerName));
-      
+    const fullMarker = config.model.markers?.bubble;
+    const fullMarkerLegend = config.model.markers?.legend;
+    config.Vizabi.utils.applyDefaults(fullMarker?.config || {}, BubbleMap.DEFAULT_MODEL.bubble);   
+    config.Vizabi.utils.applyDefaults(fullMarkerLegend?.config || {}, BubbleMap.DEFAULT_MODEL.legend);  
+
     const frameType = config.Vizabi.stores.encodings.modelTypes.frame;
     const { marker, splashMarker } = frameType.splashMarker(fullMarker);
-
-    config.model.markers[markerName] = marker;
-
+    
     config.name = "bubblemap";
 
     config.subcomponents = [{
@@ -112,75 +111,179 @@ export default class BubbleMap extends BaseComponent {
   }
 }
 BubbleMap.DEFAULT_UI = {
-  chart: {
+  "locale": { "id": "en", "shortNumberFormat": true },
+  "layout": { "projector": false },
+
+  "buttons": {
+    "buttons": ["markercontrols", "colors", "moreoptions", "presentation", "sidebarcollapse", "fullscreen"]
+  },
+  "dialogs": {
+    "dialogs": {
+      "popup": ["colors", "markercontrols", "moreoptions"],
+      "sidebar": ["colors", "markercontrols", "size"],
+      "moreoptions": ["opacity", "speed", "size", "colors", "label", "technical", "repeat", "presentation", "about"]
+    },
+    "markercontrols": {
+      "disableSlice": true,
+      "disableAddRemoveGroups": true,
+      "primaryDim": null,
+      "drilldown": null,
+      "shortcutForSwitch": false,
+      "shortcutForSwitch_allow": null
+    }
+  },
+  "marker-contextmenu": {
+    "primaryDim": null,
+    "drilldown": null,
+  },
+  "chart": {
+    "showTitles": true,
+    "timeInBackground": true,
+    "showForecast": false,
+    "showForecastOverlay": true,
+    "pauseBeforeForecast": true,
+    "endBeforeForecast": null, //value like "2022", auto-resolved to current time minus one frame step
+    "opacityHighlight": 1.0,
+    "opacitySelect": 1.0,
+    "opacityHighlightDim": 0.1,
+    "opacitySelectDim": 0.3,
+    "opacityRegular": 0.8,
+    "labels": {
+      "enabled": true,
+      "dragging": true,
+      "removeLabelBox": false
+    },
+    "superhighlightOnMinimapHover": false,
+    "map": {
+      "path": null,
+      "colorGeo": false,
+      "preserveAspectRatio": false,
+      "scale": 1,
+      "rotate": [0, 0],
+      "offset": { "top": 0, "right": 0, "bottom": 0, "left": 0 },
+      "projection": "mercator",
+      "topology": {
+        "path": "assets/shapes.json",
+        "objects": {
+          "areas": "shapes",
+          "boundaries": "shapes",
+        },
+        "geoIdProperty": "id"
+      }
+    }
+  },
+  "data-warning": {
+    "enable": false,
+    "margin": {
+      "LARGE": { "bottom": 90 },
+      "MEDIUM": { "bottom": 70 },
+      "SMALL": { "bottom": 50 }
+    }
+  },
+  "tree-menu": {
+    "showDataSources": false,
+    "folderStrategyByDataset": {}
   }
 };
 
-BubbleMap.DEFAULT_CORE = (markerName) => ({
-  requiredEncodings: ["lat", "lon", "size"],
-  encoding: {
-    "selected": {
-      modelType: "selection"
-    },
-    "highlighted": {
-      modelType: "selection"
-    },
-    "size": {
-      scale: {
-        modelType: "size",
-        allowedTypes: ["linear"],
-      }
-    },
-    "lat": {
-      data: {
-        space: {},
-        concept: {
-          filter: { concept: { $in: ["latitude", "lat"] } }
-        }
-      }
-    },
-    "lon": {
-      data: {
-        space: {},
-        concept: {
-          filter: { concept: { $in: ["longitude", "lon", "lng"] } }
-        }
-      }
-    },
-    "color": {
-      scale: {
-        modelType: "color"
-      }
-    },
-    "label": {
-      data: {
-        modelType: "entityPropertyDataConfig"
-      }
-    },
-    "size_label": {
-      data: {
-        constant: "_default"
+BubbleMap.DEFAULT_MODEL = {
+  "bubble": {
+    "requiredEncodings": ["lat", "lon", "size"],
+    "encoding": {
+      "show": {
+        "modelType": "selection"
       },
-      scale: {
-        modelType: "size",
-        allowedTypes: ["linear", "point"],
+      "selected": {
+        "modelType": "selection"
+      },
+      "highlighted": {
+        "modelType": "selection"
+      },
+      "size": {
+        "data": { },
+        "scale": {
+          "modelType": "size",
+          "allowedTypes": ["linear"],
+        }
+      },
+      "lat": {
+        "data": {
+          "space": {},
+          "concept": { "filter": { "concept": { "$in": ["latitude", "lat"] } } }
+        }
+      },
+      "lon": {
+        "data": {
+          "space": {},
+          "concept": { "filter": { "concept": { "$in": ["longitude", "lon", "lng"] } } }
+        }
+      },
+      "color": {
+        "data": { "constant": "_default" },
+        "scale": {
+          "modelType": "color"
+        }
+      },
+      "label": { "data": { "modelType": "entityPropertyDataConfig" } },
+      "frame": { "modelType": "frame", "speed": 200, "splash": true },
+      "size_label": {
+        "data": {
+          "constant": "_default"
+        },
+        "scale": {
+          "extent": [0, 0.22],
+          "modelType": "size",
+          "allowedTypes": ["linear", "point"],
+        }
+      },
+      "order": { 
+        "modelType": "order",
+        "direction": "desc",
+        "data": { 
+          "ref": `markers.bubble.encoding.size.data.config`
+        }
+      },
+      "repeat": {
+        "modelType": "repeat",
+        "allowEnc": ["size"]
+      }
+    }
+  },
+  "legend": {
+    "data": {
+      "ref": {
+        "transform": "entityConceptSkipFilter",
+        "path": "markers.bubble.encoding.color"
       }
     },
-    "frame": {
-      modelType: "frame"
-    },
-    "order": {
-      modelType: "order",
-      direction: "desc",
-      data: {
-        ref: `markers.${markerName}.encoding.size.data.config`
-      }
-    },
-    "repeat": {
-      modelType: "repeat",
-      allowEnc: ["size"]
+    "encoding": {
+      "color": {
+        "data": {
+          "concept": { "ref": "markers.bubble.encoding.color.data.concept" },
+          "constant": { "ref": "markers.bubble.encoding.color.data.constant" }
+        },
+        "scale": {
+          "modelType": "color",
+          "palette": { "ref": "markers.bubble.encoding.color.scale.palette" },
+          "domain": null,
+          "range": null,
+          "type": null,
+          "zoomed": null,
+          "zeroBaseline": false,
+          "clamp": false,
+          "allowedTypes": null
+        }
+        //"scale": { "ref": "markers.bubble.encoding.color.scale" }
+      },
+      "name": { "data": { } },
+      "order": {
+        "modelType": "order",
+        "direction": "asc",
+        "data": { }
+      },
+      "map": { "data": { } }
     }
   }
-});
+};
 
 BubbleMap.versionInfo = { version: __VERSION, build: __BUILD, package: __PACKAGE_JSON_FIELDS, sharedComponents: versionInfo};
